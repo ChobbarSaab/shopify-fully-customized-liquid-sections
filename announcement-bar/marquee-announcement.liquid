@@ -28,8 +28,15 @@
   <div class="custom-marquee__viewport">
 
     {% if section.settings.enable_fade %}
-      <div class="custom-marquee__fade custom-marquee__fade--left"></div>
-      <div class="custom-marquee__fade custom-marquee__fade--right"></div>
+      <div
+        class="custom-marquee__fade custom-marquee__fade--left"
+        aria-hidden="true"
+      ></div>
+
+      <div
+        class="custom-marquee__fade custom-marquee__fade--right"
+        aria-hidden="true"
+      ></div>
     {% endif %}
 
     <div
@@ -38,6 +45,9 @@
         {% if section.settings.pause_on_hover %}
           custom-marquee__track--pause
         {% endif %}
+        {% unless section.settings.enable_animation %}
+          custom-marquee__track--static
+        {% endunless %}
       "
       data-direction="{{ section.settings.direction }}"
     >
@@ -58,47 +68,47 @@
               >
             {% endif %}
 
-            <span class="custom-marquee__text">
-              {{ block.settings.text | escape }}
-            </span>
-
-            {% if section.settings.show_separator %}
-              <span
-                class="custom-marquee__separator"
-                aria-hidden="true"
-              >
-                {% case section.settings.separator_style %}
-
-                  {% when 'line' %}
-                    |
-
-                  {% when 'dot' %}
-                    •
-
-                  {% when 'diamond' %}
-                    ◆
-
-                  {% when 'star' %}
-                    ★
-
-                  {% when 'arrow' %}
-                    →
-
-                  {% when 'circle' %}
-                    ○
-
-                  {% when 'slash' %}
-                    /
-
-                  {% when 'plus' %}
-                    +
-
-                  {% when 'sparkle' %}
-                    ✦
-
-                {% endcase %}
+              <span class="custom-marquee__text">
+                {{ block.settings.text }}
               </span>
-            {% endif %}
+
+              {% if section.settings.show_separator %}
+                <span
+                  class="custom-marquee__separator"
+                  aria-hidden="true"
+                >
+                  {% case section.settings.separator_style %}
+
+                    {% when 'line' %}
+                      |
+
+                    {% when 'dot' %}
+                      •
+
+                    {% when 'diamond' %}
+                      ◆
+
+                    {% when 'star' %}
+                      ★
+
+                    {% when 'arrow' %}
+                      →
+
+                    {% when 'circle' %}
+                      ○
+
+                    {% when 'slash' %}
+                      /
+
+                    {% when 'plus' %}
+                      +
+
+                    {% when 'sparkle' %}
+                      ✦
+
+                  {% endcase %}
+                </span>
+              {% endif %}
 
             {% if block.settings.link != blank %}
               </a>
@@ -122,9 +132,7 @@
     overflow: hidden;
     display: flex;
     align-items: center;
-
     position: relative;
-
     background: var(--marquee-bg);
     color: var(--marquee-text);
   }
@@ -132,11 +140,8 @@
   #CustomMarquee-{{ section.id }} .custom-marquee__viewport {
     width: 100%;
     height: 100%;
-
     overflow: hidden;
-
     position: relative;
-
     display: flex;
     align-items: center;
   }
@@ -145,14 +150,13 @@
     display: flex;
     width: max-content;
     flex-shrink: 0;
-
     will-change: transform;
   }
 
   #CustomMarquee-{{ section.id }} .custom-marquee__group {
     display: flex;
     align-items: center;
-
+    justify-content: flex-start;
     flex-shrink: 0;
 
     font-family: {{ marquee_font.family }}, {{ marquee_font.fallback_families }};
@@ -170,10 +174,13 @@
     {% case section.settings.text_transform %}
       {% when 'uppercase' %}
         text-transform: uppercase;
+
       {% when 'lowercase' %}
         text-transform: lowercase;
+
       {% when 'capitalize' %}
         text-transform: capitalize;
+
       {% else %}
         text-transform: none;
     {% endcase %}
@@ -189,7 +196,6 @@
   #CustomMarquee-{{ section.id }} .custom-marquee__item {
     display: flex;
     align-items: center;
-
     flex-shrink: 0;
     white-space: nowrap;
   }
@@ -197,16 +203,13 @@
   #CustomMarquee-{{ section.id }} .custom-marquee__link {
     display: flex;
     align-items: center;
-
     color: inherit;
     text-decoration: inherit;
   }
 
   #CustomMarquee-{{ section.id }} .custom-marquee__text {
     display: inline-block;
-
     margin-left: var(--marquee-gap);
-
     white-space: nowrap;
   }
 
@@ -220,16 +223,32 @@
     color: var(--marquee-separator);
 
     font-size: var(--marquee-separator-size);
-
     line-height: 1;
 
     flex-shrink: 0;
   }
 
-  #CustomMarquee-{{ section.id }} .custom-marquee__track--pause:hover {
+  /* Static mode */
+  #CustomMarquee-{{ section.id }} .custom-marquee__track--static {
+    width: 100%;
+    justify-content: center;
+    transform: translateX(0) !important;
+    animation: none !important;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__track--static
+    .custom-marquee__group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Pause on hover */
+  #CustomMarquee-{{ section.id }}
+    .custom-marquee__track--pause:hover {
     animation-play-state: paused !important;
   }
 
+  /* Edge fade */
   {% if section.settings.enable_fade %}
 
     #CustomMarquee-{{ section.id }} .custom-marquee__fade {
@@ -244,7 +263,8 @@
       pointer-events: none;
     }
 
-    #CustomMarquee-{{ section.id }} .custom-marquee__fade--left {
+    #CustomMarquee-{{ section.id }}
+      .custom-marquee__fade--left {
       left: 0;
 
       background: linear-gradient(
@@ -254,7 +274,8 @@
       );
     }
 
-    #CustomMarquee-{{ section.id }} .custom-marquee__fade--right {
+    #CustomMarquee-{{ section.id }}
+      .custom-marquee__fade--right {
       right: 0;
 
       background: linear-gradient(
@@ -289,7 +310,8 @@
 
   @media (prefers-reduced-motion: reduce) {
 
-    #CustomMarquee-{{ section.id }} .custom-marquee__track {
+    #CustomMarquee-{{ section.id }}
+      .custom-marquee__track {
       animation: none !important;
       transform: translateX(0) !important;
     }
@@ -306,7 +328,9 @@
         'CustomMarquee-{{ section.id }}'
       );
 
-      if (!marquee) return;
+      if (!marquee) {
+        return;
+      }
 
       var viewport = marquee.querySelector(
         '.custom-marquee__viewport'
@@ -320,35 +344,126 @@
         '.custom-marquee__group'
       );
 
-      if (!viewport || !track || !originalGroup) return;
+      if (
+        !viewport ||
+        !track ||
+        !originalGroup
+      ) {
+        return;
+      }
 
-      var direction = track.dataset.direction;
+      var direction =
+        track.dataset.direction;
 
-      var speed = {{ section.settings.speed | json }};
+      var speed =
+        {{ section.settings.speed | json }};
+
+      var animationEnabled =
+        {{ section.settings.enable_animation | json }};
+
+      var disableSingleAnnouncement =
+        {{ section.settings.disable_single_announcement | json }};
+
+      var announcementCount =
+        {{ section.blocks.size }};
+
+      var reducedMotion =
+        window.matchMedia(
+          '(prefers-reduced-motion: reduce)'
+        );
 
       function buildMarquee() {
 
+        var shouldAnimate =
+          animationEnabled &&
+          !reducedMotion.matches;
+
+        /*
+         * Automatically disable animation
+         * when there is only one announcement.
+         */
+        if (
+          disableSingleAnnouncement &&
+          announcementCount <= 1
+        ) {
+          shouldAnimate = false;
+        }
+
+        /*
+         * Completely static mode.
+         */
+        if (!shouldAnimate) {
+
+          track.style.animation = 'none';
+
+          track.style.transform =
+            'translate3d(0,0,0)';
+
+          track.innerHTML = '';
+
+          var staticGroup =
+            originalGroup.cloneNode(true);
+
+          track.appendChild(staticGroup);
+
+          track.classList.add(
+            'custom-marquee__track--static'
+          );
+
+          return;
+        }
+
+        /*
+         * Animated mode.
+         */
+        track.classList.remove(
+          'custom-marquee__track--static'
+        );
+
         track.style.animation = 'none';
-        track.style.transform = 'translateX(0)';
+
+        track.style.transform =
+          'translate3d(0,0,0)';
 
         track.innerHTML = '';
 
-        var baseGroup = originalGroup.cloneNode(true);
+        /*
+         * Base group.
+         */
+        var baseGroup =
+          originalGroup.cloneNode(true);
 
         track.appendChild(baseGroup);
 
+        /*
+         * Measure the group.
+         */
         var groupWidth =
           baseGroup.getBoundingClientRect().width;
 
         var viewportWidth =
           viewport.getBoundingClientRect().width;
 
-        if (!groupWidth || !viewportWidth) return;
+        if (
+          !groupWidth ||
+          !viewportWidth
+        ) {
+          return;
+        }
 
+        /*
+         * Add enough copies to completely
+         * fill the viewport plus one full
+         * additional group.
+         */
         var requiredWidth =
-          viewportWidth + groupWidth;
+          viewportWidth +
+          groupWidth;
 
-        while (track.scrollWidth < requiredWidth) {
+        while (
+          track.scrollWidth <
+          requiredWidth
+        ) {
 
           track.appendChild(
             baseGroup.cloneNode(true)
@@ -356,6 +471,11 @@
 
         }
 
+        /*
+         * IMPORTANT:
+         * One full group is the exact
+         * animation cycle distance.
+         */
         var cycleWidth =
           baseGroup.getBoundingClientRect().width;
 
@@ -365,11 +485,11 @@
         var styleId =
           'custom-marquee-keyframes-{{ section.id }}';
 
-        var oldStyle =
+        var existingStyle =
           document.getElementById(styleId);
 
-        if (oldStyle) {
-          oldStyle.remove();
+        if (existingStyle) {
+          existingStyle.remove();
         }
 
         var style =
@@ -383,14 +503,17 @@
             '@keyframes ' +
             animationName +
             ' {' +
+
             'from {' +
             'transform: translate3d(0,0,0);' +
             '}' +
+
             'to {' +
             'transform: translate3d(-' +
             cycleWidth +
             'px,0,0);' +
             '}' +
+
             '}';
 
         } else {
@@ -399,44 +522,81 @@
             '@keyframes ' +
             animationName +
             ' {' +
+
             'from {' +
             'transform: translate3d(-' +
             cycleWidth +
             'px,0,0);' +
             '}' +
+
             'to {' +
             'transform: translate3d(0,0,0);' +
             '}' +
+
             '}';
 
         }
 
         document.head.appendChild(style);
 
-        track.style.animation =
-          animationName +
-          ' ' +
-          speed +
-          's linear infinite';
+        /*
+         * Start position for right-to-left.
+         */
+        if (direction === 'left') {
 
-        if (direction === 'right') {
+          track.style.transform =
+            'translate3d(0,0,0)';
+
+        } else {
 
           track.style.transform =
             'translate3d(-' +
             cycleWidth +
             'px,0,0)';
+        }
+
+        /*
+         * Apply animation.
+         */
+        track.style.animation =
+          animationName +
+          ' ' +
+          speed +
+          's linear infinite';
+      }
+
+      /*
+       * Initial build.
+       */
+      function start() {
+
+        /*
+         * Wait for fonts so measurements
+         * are accurate.
+         */
+        if (
+          document.fonts &&
+          document.fonts.ready
+        ) {
+
+          document.fonts.ready.then(
+            function () {
+              buildMarquee();
+            }
+          );
 
         } else {
 
-          track.style.transform =
-            'translate3d(0,0,0)';
+          buildMarquee();
 
         }
-
       }
 
-      buildMarquee();
+      start();
 
+      /*
+       * Rebuild when browser size changes.
+       */
       var resizeTimer;
 
       window.addEventListener(
@@ -447,13 +607,32 @@
 
           resizeTimer =
             setTimeout(
-              buildMarquee,
+              function () {
+                buildMarquee();
+              },
               150
             );
 
         },
         { passive: true }
       );
+
+      /*
+       * Rebuild if reduced-motion
+       * preference changes.
+       */
+      if (
+        reducedMotion.addEventListener
+      ) {
+
+        reducedMotion.addEventListener(
+          'change',
+          function () {
+            buildMarquee();
+          }
+        );
+
+      }
 
     }
 
@@ -479,12 +658,14 @@
 {
   "name": "Custom Marquee",
   "max_blocks": 20,
+
   "settings": [
 
     {
       "type": "header",
       "content": "Animation"
     },
+
     {
       "type": "range",
       "id": "speed",
@@ -495,6 +676,21 @@
       "unit": "s",
       "default": 30
     },
+
+    {
+      "type": "checkbox",
+      "id": "enable_animation",
+      "label": "Enable marquee animation",
+      "default": true
+    },
+
+    {
+      "type": "checkbox",
+      "id": "disable_single_announcement",
+      "label": "Keep static when only one announcement",
+      "default": true
+    },
+
     {
       "type": "select",
       "id": "direction",
@@ -511,6 +707,7 @@
       ],
       "default": "left"
     },
+
     {
       "type": "checkbox",
       "id": "pause_on_hover",
@@ -522,12 +719,14 @@
       "type": "header",
       "content": "Typography"
     },
+
     {
       "type": "font_picker",
       "id": "font_family",
       "label": "Font",
       "default": "roboto_n4"
     },
+
     {
       "type": "select",
       "id": "font_weight",
@@ -556,6 +755,7 @@
       ],
       "default": "500"
     },
+
     {
       "type": "select",
       "id": "text_transform",
@@ -580,6 +780,7 @@
       ],
       "default": "uppercase"
     },
+
     {
       "type": "select",
       "id": "text_decoration",
@@ -596,6 +797,7 @@
       ],
       "default": "none"
     },
+
     {
       "type": "range",
       "id": "line_height",
@@ -616,6 +818,7 @@
       "unit": "px",
       "default": 14
     },
+
     {
       "type": "range",
       "id": "mobile_font_size",
@@ -626,6 +829,7 @@
       "unit": "px",
       "default": 12
     },
+
     {
       "type": "range",
       "id": "letter_spacing",
@@ -636,6 +840,7 @@
       "unit": "px",
       "default": 0
     },
+
     {
       "type": "range",
       "id": "mobile_letter_spacing",
@@ -651,18 +856,21 @@
       "type": "header",
       "content": "Colors"
     },
+
     {
       "type": "color",
       "id": "background_color",
       "label": "Background color",
       "default": "#111111"
     },
+
     {
       "type": "color",
       "id": "text_color",
       "label": "Text color",
       "default": "#FFFFFF"
     },
+
     {
       "type": "color",
       "id": "separator_color",
@@ -674,6 +882,7 @@
       "type": "header",
       "content": "Desktop layout"
     },
+
     {
       "type": "range",
       "id": "height",
@@ -684,6 +893,7 @@
       "unit": "px",
       "default": 40
     },
+
     {
       "type": "range",
       "id": "gap",
@@ -699,6 +909,7 @@
       "type": "header",
       "content": "Mobile layout"
     },
+
     {
       "type": "range",
       "id": "mobile_height",
@@ -709,6 +920,7 @@
       "unit": "px",
       "default": 36
     },
+
     {
       "type": "range",
       "id": "mobile_gap",
@@ -724,12 +936,14 @@
       "type": "header",
       "content": "Separators"
     },
+
     {
       "type": "checkbox",
       "id": "show_separator",
       "label": "Show separators",
       "default": true
     },
+
     {
       "type": "select",
       "id": "separator_style",
@@ -774,6 +988,7 @@
       ],
       "default": "line"
     },
+
     {
       "type": "range",
       "id": "separator_size",
@@ -784,6 +999,7 @@
       "unit": "px",
       "default": 14
     },
+
     {
       "type": "range",
       "id": "separator_gap",
@@ -799,12 +1015,14 @@
       "type": "header",
       "content": "Edge fade"
     },
+
     {
       "type": "checkbox",
       "id": "enable_fade",
       "label": "Enable edge fade",
       "default": true
     },
+
     {
       "type": "range",
       "id": "fade_width",
@@ -817,6 +1035,7 @@
     }
 
   ],
+
   "blocks": [
     {
       "type": "announcement",
@@ -836,6 +1055,7 @@
       ]
     }
   ],
+
   "presets": [
     {
       "name": "Custom Marquee",
