@@ -1,0 +1,2282 @@
+{%- comment -%}
+  ============================================================
+  TRUST BADGES — fully customizable Shopify OS 2.0 section
+  ------------------------------------------------------------
+  • 5 card styles: Solid, Glass, Gradient border, Outline, Minimal
+  • 26 built-in icons + custom image upload per badge
+  • Cursor spotlight, animated gradient border, hover effects
+  • Scroll-in entrance animations with stagger
+  • Desktop / tablet / mobile columns, mobile swipe carousel
+  • Optional payment icons row (uses your store's payment methods)
+  • Reduced-motion support, no external libraries
+  ============================================================
+{%- endcomment -%}
+
+{%- liquid
+  assign s = section.settings
+
+  assign heading_font = s.heading_font
+  assign body_font = s.body_font
+  assign heading_font_bold = heading_font | font_modify: 'weight', 'bold'
+  assign body_font_bold = body_font | font_modify: 'weight', 'bold'
+
+  assign section_bg = s.background_color
+  if s.background_gradient != blank
+    assign section_bg = s.background_gradient
+  endif
+
+  assign card_alpha = s.card_opacity | divided_by: 100.0
+  assign card_bg = s.card_bg | color_modify: 'alpha', card_alpha
+
+  assign spot_alpha = s.spotlight_strength | divided_by: 100.0
+  assign spot_color = s.spotlight_color | color_modify: 'alpha', spot_alpha
+
+  assign effect_alpha = s.effect_strength | divided_by: 100.0
+  assign effect_color = s.effect_color | color_modify: 'alpha', effect_alpha
+
+  assign block_count = section.blocks.size
+
+  assign cols_d = s.columns_desktop
+  if block_count > 0 and block_count < cols_d
+    assign cols_d = block_count
+  endif
+
+  assign cols_t = s.columns_tablet
+  if block_count > 0 and block_count < cols_t
+    assign cols_t = block_count
+  endif
+
+  assign cols_m = s.columns_mobile
+  if block_count > 0 and block_count < cols_m
+    assign cols_m = block_count
+  endif
+
+  assign mobile_layout = s.mobile_card_layout
+  if mobile_layout == 'same'
+    assign mobile_layout = s.card_layout
+  endif
+
+  assign show_header = false
+  if s.eyebrow != blank or s.heading != blank or s.subheading != blank
+    assign show_header = true
+  endif
+
+  assign reveal_index = 0
+-%}
+
+<section
+  id="TrustBadges-{{ section.id }}"
+  class="
+    tb
+    tb--style-{{ s.card_style }}
+    tb--layout-{{ s.card_layout }}
+    tb--mlayout-{{ mobile_layout }}
+    tb--align-{{ s.text_align }}
+    tb--mobile-{{ s.mobile_display }}
+    tb--icon-bg-{{ s.icon_background }}
+    tb--icon-shape-{{ s.icon_shape }}
+    tb--shadow-{{ s.card_shadow }}
+    tb--hover-{{ s.hover_effect }}
+    tb--icon-hover-{{ s.icon_hover }}
+    tb--entrance-{{ s.entrance_animation }}
+    tb--highlight-{{ s.heading_highlight }}
+    {% if s.enable_spotlight %}tb--spotlight{% endif %}
+    {% if s.animate_border %}tb--spin{% endif %}
+    {% if s.show_dividers %}tb--dividers{% endif %}
+    {% if s.full_width %}tb--full{% endif %}
+    {% if s.payment_grayscale %}tb--pay-mono{% endif %}
+  "
+  data-entrance="{{ s.entrance_animation }}"
+  {% if s.heading != blank %}aria-label="{{ s.heading | strip_html | escape }}"{% endif %}
+>
+  {%- if s.background_effect != 'none' -%}
+    <div class="tb__bg tb__bg--{{ s.background_effect }}" aria-hidden="true"></div>
+  {%- endif -%}
+
+  <div class="tb__inner">
+
+    {%- if show_header -%}
+      <div class="tb__header tb__reveal" style="--tb-i: {{ reveal_index }};">
+        {%- if s.eyebrow != blank -%}
+          <p class="tb__eyebrow">{{ s.eyebrow | escape }}</p>
+        {%- endif -%}
+
+        {%- if s.heading != blank -%}
+          <{{ s.heading_tag }} class="tb__heading">{{ s.heading }}</{{ s.heading_tag }}>
+        {%- endif -%}
+
+        {%- if s.subheading != blank -%}
+          <p class="tb__subheading">{{ s.subheading }}</p>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    {%- if block_count > 0 -%}
+      <ul class="tb__list tb__reveal" role="list">
+        {%- for block in section.blocks -%}
+          {%- liquid
+            assign b = block.settings
+            assign icon = b.icon
+            if icon == 'custom' and b.custom_icon == blank
+              assign icon = 'shield'
+            endif
+          -%}
+
+          <li
+            class="tb__item"
+            style="
+              --tb-i: {{ forloop.index }};
+              {% if b.use_custom_color %}
+                --tb-icon-color: {{ b.custom_icon_color }};
+                --tb-icon-bg: {{ b.custom_icon_bg }};
+                --tb-icon-tint: {{ b.custom_icon_color }};
+              {% endif %}
+            "
+            {{ block.shopify_attributes }}
+          >
+            {%- if b.link != blank -%}
+              <a href="{{ b.link }}" class="tb__card">
+            {%- else -%}
+              <div class="tb__card">
+            {%- endif -%}
+
+              {%- unless icon == 'none' -%}
+                <span class="tb__icon" aria-hidden="true">
+                  {%- if icon == 'custom' -%}
+                    {{
+                      b.custom_icon
+                      | image_url: width: 200
+                      | image_tag: loading: 'lazy', alt: '', class: 'tb__icon-img'
+                    }}
+                  {%- else -%}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="{{ s.icon_stroke }}"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      focusable="false"
+                    >
+                      {%- case icon -%}
+                        {%- when 'shield' -%}
+                          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>
+                        {%- when 'truck' -%}
+                          <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>
+                        {%- when 'returns' -%}
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                        {%- when 'lock' -%}
+                          <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        {%- when 'card' -%}
+                          <rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>
+                        {%- when 'cash' -%}
+                          <rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>
+                        {%- when 'star' -%}
+                          <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>
+                        {%- when 'award' -%}
+                          <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/>
+                        {%- when 'check' -%}
+                          <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+                        {%- when 'support' -%}
+                          <path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/>
+                        {%- when 'clock' -%}
+                          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                        {%- when 'package' -%}
+                          <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/>
+                        {%- when 'gift' -%}
+                          <rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>
+                        {%- when 'tag' -%}
+                          <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
+                        {%- when 'globe' -%}
+                          <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
+                        {%- when 'pin' -%}
+                          <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
+                        {%- when 'leaf' -%}
+                          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                        {%- when 'heart' -%}
+                          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        {%- when 'thumbs' -%}
+                          <path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
+                        {%- when 'users' -%}
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        {%- when 'zap' -%}
+                          <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
+                        {%- when 'sparkles' -%}
+                          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                        {%- when 'flask' -%}
+                          <path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/>
+                        {%- when 'refresh' -%}
+                          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+                        {%- when 'badge' -%}
+                          <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/>
+                      {%- endcase -%}
+                    </svg>
+                  {%- endif -%}
+                </span>
+              {%- endunless -%}
+
+              <span class="tb__content">
+                {%- if b.label != blank -%}
+                  <span class="tb__label">{{ b.label | escape }}</span>
+                {%- endif -%}
+
+                {%- if b.title != blank -%}
+                  <span class="tb__title">{{ b.title | escape }}</span>
+                {%- endif -%}
+
+                {%- if b.text != blank -%}
+                  <span class="tb__text">{{ b.text }}</span>
+                {%- endif -%}
+              </span>
+
+            {%- if b.link != blank -%}
+              </a>
+            {%- else -%}
+              </div>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+
+    {%- if s.show_payment_icons -%}
+      <div class="tb__payments tb__reveal" style="--tb-i: {{ block_count | plus: 1 }};">
+        {%- if s.payment_text != blank -%}
+          <p class="tb__payments-text">{{ s.payment_text | escape }}</p>
+        {%- endif -%}
+
+        <ul class="tb__payment-list" role="list">
+          {%- for type in shop.enabled_payment_types -%}
+            <li class="tb__payment-icon">{{ type | payment_type_svg_tag }}</li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    {%- endif -%}
+
+  </div>
+</section>
+
+<style>
+  {{ heading_font | font_face: font_display: 'swap' }}
+  {% if heading_font_bold %}{{ heading_font_bold | font_face: font_display: 'swap' }}{% endif %}
+  {{ body_font | font_face: font_display: 'swap' }}
+  {% if body_font_bold %}{{ body_font_bold | font_face: font_display: 'swap' }}{% endif %}
+
+  @property --tb-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  /* ---------- Settings → CSS variables ---------- */
+  #TrustBadges-{{ section.id }} {
+    --tb-bg: {{ section_bg }};
+    --tb-heading-color: {{ s.heading_color }};
+    --tb-sub-color: {{ s.subheading_color }};
+    --tb-eyebrow-color: {{ s.eyebrow_color }};
+    --tb-title-color: {{ s.title_color }};
+    --tb-text-color: {{ s.text_color }};
+    --tb-card-bg: {{ card_bg }};
+    --tb-card-border: {{ s.card_border_color }};
+    --tb-icon-color: {{ s.icon_color }};
+    --tb-icon-bg: {{ s.icon_bg_color }};
+    --tb-icon-tint: {{ s.icon_color }};
+    --tb-accent-1: {{ s.accent_1 }};
+    --tb-accent-2: {{ s.accent_2 }};
+    --tb-divider: {{ s.divider_color }};
+    --tb-label-bg: {{ s.label_bg }};
+    --tb-label-text: {{ s.label_text }};
+    --tb-spot: {{ spot_color }};
+    --tb-effect: {{ effect_color }};
+
+    --tb-radius: {{ s.radius }}px;
+    --tb-border-width: {{ s.border_width }}px;
+    --tb-blur: {{ s.glass_blur }}px;
+    --tb-content-gap: {{ s.content_gap }}px;
+    --tb-icon-pad: {{ s.icon_padding }}px;
+    --tb-border-speed: {{ s.border_speed }}s;
+    --tb-stagger: {{ s.stagger }}ms;
+    --tb-header-gap: {{ s.header_spacing }}px;
+    --tb-max-width: {{ s.max_width }}px;
+    --tb-line-height: {{ s.line_height }};
+    --tb-heading-weight: {{ s.heading_weight }};
+    --tb-heading-ls: {{ s.heading_letter_spacing }}px;
+    --tb-title-weight: {{ s.title_weight }};
+    --tb-title-ls: {{ s.title_letter_spacing }}px;
+    --tb-eyebrow-size: {{ s.eyebrow_size }}px;
+    --tb-payment-gap: {{ s.payment_spacing }}px;
+    --tb-swipe-w: {{ s.swipe_width }}%;
+
+    /* Desktop values (overridden below for tablet / mobile) */
+    --tb-cols: {{ cols_d }};
+    --tb-pt: {{ s.padding_top }}px;
+    --tb-pb: {{ s.padding_bottom }}px;
+    --tb-side: {{ s.side_padding }}px;
+    --tb-gap: {{ s.gap }}px;
+    --tb-card-pad: {{ s.card_padding }}px;
+    --tb-icon-size: {{ s.icon_size }}px;
+    --tb-heading-size: {{ s.heading_size }}px;
+    --tb-sub-size: {{ s.subheading_size }}px;
+    --tb-title-size: {{ s.title_size }}px;
+    --tb-text-size: {{ s.text_size }}px;
+    --tb-payment-h: {{ s.payment_icon_height }}px;
+  }
+
+  /* ---------- Section ---------- */
+  #TrustBadges-{{ section.id }} {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--tb-bg);
+    padding-top: var(--tb-pt);
+    padding-bottom: var(--tb-pb);
+    font-family: {{ body_font.family }}, {{ body_font.fallback_families }};
+    font-style: {{ body_font.style }};
+    line-height: var(--tb-line-height);
+  }
+
+  #TrustBadges-{{ section.id }} *,
+  #TrustBadges-{{ section.id }} *::before,
+  #TrustBadges-{{ section.id }} *::after {
+    box-sizing: border-box;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: var(--tb-max-width);
+    margin: 0 auto;
+    padding-left: var(--tb-side);
+    padding-right: var(--tb-side);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--full .tb__inner {
+    max-width: none;
+  }
+
+  /* ---------- Background effects ---------- */
+  #TrustBadges-{{ section.id }} .tb__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__bg--grid {
+    background-image:
+      linear-gradient(var(--tb-effect) 1px, transparent 1px),
+      linear-gradient(90deg, var(--tb-effect) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+
+  #TrustBadges-{{ section.id }} .tb__bg--dots {
+    background-image: radial-gradient(var(--tb-effect) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+
+  #TrustBadges-{{ section.id }} .tb__bg--glow {
+    background:
+      radial-gradient(40% 60% at 15% 20%, color-mix(in srgb, var(--tb-accent-1) 35%, transparent), transparent 70%),
+      radial-gradient(40% 60% at 85% 80%, color-mix(in srgb, var(--tb-accent-2) 30%, transparent), transparent 70%);
+    opacity: calc({{ s.effect_strength }} / 20);
+    filter: blur(20px);
+  }
+
+  /* ---------- Header ---------- */
+  #TrustBadges-{{ section.id }} .tb__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: var(--tb-header-gap);
+    text-align: {{ s.heading_align }};
+    {% case s.heading_align %}
+      {% when 'center' %}align-items: center;
+      {% when 'right' %}align-items: flex-end;
+      {% else %}align-items: flex-start;
+    {% endcase %}
+  }
+
+  #TrustBadges-{{ section.id }} .tb__eyebrow {
+    margin: 0;
+    color: var(--tb-eyebrow-color);
+    font-size: var(--tb-eyebrow-size);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__heading {
+    margin: 0;
+    max-width: 30ch;
+    color: var(--tb-heading-color);
+    font-family: {{ heading_font.family }}, {{ heading_font.fallback_families }};
+    font-style: {{ heading_font.style }};
+    font-size: var(--tb-heading-size);
+    font-weight: var(--tb-heading-weight);
+    letter-spacing: var(--tb-heading-ls);
+    line-height: 1.1;
+    text-transform: {{ s.heading_transform }};
+    text-wrap: balance;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--highlight-gradient .tb__heading em,
+  #TrustBadges-{{ section.id }}.tb--highlight-gradient .tb__heading i {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--tb-accent-1), var(--tb-accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--highlight-accent .tb__heading em,
+  #TrustBadges-{{ section.id }}.tb--highlight-accent .tb__heading i {
+    font-style: normal;
+    color: var(--tb-accent-1);
+  }
+
+  #TrustBadges-{{ section.id }} .tb__subheading {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--tb-sub-color);
+    font-size: var(--tb-sub-size);
+  }
+
+  /* ---------- Grid ---------- */
+  #TrustBadges-{{ section.id }} .tb__list {
+    display: grid;
+    grid-template-columns: repeat(var(--tb-cols), minmax(0, 1fr));
+    gap: var(--tb-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__item {
+    position: relative;
+    display: flex;
+    min-width: 0;
+  }
+
+  /* ---------- Card ---------- */
+  #TrustBadges-{{ section.id }} .tb__card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    gap: var(--tb-content-gap);
+    width: 100%;
+    padding: var(--tb-card-pad);
+    border-radius: var(--tb-radius);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 0.3s ease,
+      background-color 0.3s ease;
+  }
+
+  #TrustBadges-{{ section.id }} a.tb__card:focus-visible {
+    outline: 2px solid var(--tb-accent-1);
+    outline-offset: 3px;
+  }
+
+  /* Card layouts */
+  #TrustBadges-{{ section.id }}.tb--layout-stacked .tb__card {
+    flex-direction: column;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--layout-inline .tb__card {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--layout-stacked.tb--align-center .tb__card {
+    align-items: center;
+    text-align: center;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--layout-stacked.tb--align-left .tb__card {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  /* Card styles */
+  #TrustBadges-{{ section.id }}.tb--style-solid .tb__card {
+    background: var(--tb-card-bg);
+    border: var(--tb-border-width) solid var(--tb-card-border);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--style-outline .tb__card {
+    background: transparent;
+    border: max(var(--tb-border-width), 1px) solid var(--tb-card-border);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--style-glass .tb__card {
+    background: var(--tb-card-bg);
+    border: var(--tb-border-width) solid var(--tb-card-border);
+    -webkit-backdrop-filter: blur(var(--tb-blur)) saturate(140%);
+    backdrop-filter: blur(var(--tb-blur)) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--style-gradient .tb__card {
+    background: var(--tb-card-bg);
+    border: 0;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--style-gradient .tb__card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: max(var(--tb-border-width), 1px);
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--tb-angle),
+      var(--tb-accent-1),
+      var(--tb-accent-2),
+      color-mix(in srgb, var(--tb-accent-1) 15%, transparent),
+      var(--tb-accent-1)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--style-gradient.tb--spin .tb__card::before {
+    animation: tb-border-spin var(--tb-border-speed) linear infinite;
+  }
+
+  @keyframes tb-border-spin {
+    to { --tb-angle: 360deg; }
+  }
+
+  #TrustBadges-{{ section.id }}.tb--style-minimal .tb__card {
+    background: transparent;
+    border: 0;
+    box-shadow: none !important;
+  }
+
+  /* Shadows */
+  #TrustBadges-{{ section.id }}.tb--shadow-soft .tb__card {
+    box-shadow: 0 1px 2px rgba(16, 16, 32, 0.04), 0 8px 24px rgba(16, 16, 32, 0.06);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--shadow-medium .tb__card {
+    box-shadow: 0 2px 6px rgba(16, 16, 32, 0.06), 0 16px 40px rgba(16, 16, 32, 0.10);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--shadow-strong .tb__card {
+    box-shadow: 0 4px 10px rgba(16, 16, 32, 0.08), 0 28px 60px rgba(16, 16, 32, 0.18);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--shadow-glow .tb__card {
+    box-shadow: 0 10px 40px color-mix(in srgb, var(--tb-accent-1) 28%, transparent);
+  }
+
+  /* Spotlight (follows the cursor) */
+  #TrustBadges-{{ section.id }}.tb--spotlight .tb__card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      260px circle at var(--tb-mx, 50%) var(--tb-my, 50%),
+      var(--tb-spot),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--spotlight .tb__card:hover::after {
+    opacity: 1;
+  }
+
+  /* Hover effects */
+  @media (hover: hover) {
+    #TrustBadges-{{ section.id }}.tb--hover-lift .tb__card:hover {
+      transform: translateY(-6px);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--hover-lift:not(.tb--style-minimal) .tb__card:hover {
+      box-shadow: 0 4px 10px rgba(16, 16, 32, 0.06), 0 24px 50px rgba(16, 16, 32, 0.14);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--hover-scale .tb__card:hover {
+      transform: scale(1.035);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--hover-glow:not(.tb--style-minimal) .tb__card:hover {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--tb-accent-1) 40%, transparent),
+        0 14px 44px color-mix(in srgb, var(--tb-accent-1) 35%, transparent);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--hover-border .tb__card:hover {
+      border-color: var(--tb-accent-1);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--icon-hover-pop .tb__card:hover .tb__icon {
+      transform: scale(1.12) rotate(-6deg);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--icon-hover-rotate .tb__card:hover .tb__icon {
+      transform: rotate(360deg);
+    }
+
+    #TrustBadges-{{ section.id }}.tb--icon-hover-bounce .tb__card:hover .tb__icon {
+      animation: tb-icon-bounce 0.7s cubic-bezier(0.3, 0.7, 0.4, 1);
+    }
+  }
+
+  @keyframes tb-icon-bounce {
+    0%, 100% { transform: translateY(0); }
+    35% { transform: translateY(-8px); }
+    65% { transform: translateY(2px); }
+  }
+
+  /* ---------- Icon ---------- */
+  #TrustBadges-{{ section.id }} .tb__icon {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--tb-icon-size) + var(--tb-icon-pad) * 2);
+    height: calc(var(--tb-icon-size) + var(--tb-icon-pad) * 2);
+    color: var(--tb-icon-color);
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #TrustBadges-{{ section.id }} .tb__icon svg,
+  #TrustBadges-{{ section.id }} .tb__icon .tb__icon-img {
+    display: block;
+    width: var(--tb-icon-size);
+    height: var(--tb-icon-size);
+    object-fit: contain;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--icon-shape-circle .tb__icon { border-radius: 999px; }
+  #TrustBadges-{{ section.id }}.tb--icon-shape-rounded .tb__icon { border-radius: calc(var(--tb-icon-size) * 0.45); }
+  #TrustBadges-{{ section.id }}.tb--icon-shape-square .tb__icon { border-radius: 4px; }
+
+  #TrustBadges-{{ section.id }}.tb--icon-bg-none .tb__icon {
+    width: auto;
+    height: auto;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--icon-bg-soft .tb__icon {
+    background: color-mix(in srgb, var(--tb-icon-tint) 13%, transparent);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--icon-bg-solid .tb__icon {
+    background: var(--tb-icon-bg);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--icon-bg-gradient .tb__icon {
+    background: linear-gradient(135deg, var(--tb-accent-1), var(--tb-accent-2));
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--tb-accent-1) 35%, transparent);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--icon-bg-outline .tb__icon {
+    border: 1.5px solid color-mix(in srgb, var(--tb-icon-tint) 35%, transparent);
+  }
+
+  /* ---------- Text ---------- */
+  #TrustBadges-{{ section.id }} .tb__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--layout-stacked.tb--align-center .tb__content {
+    align-items: center;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--layout-inline .tb__content,
+  #TrustBadges-{{ section.id }}.tb--layout-stacked.tb--align-left .tb__content {
+    align-items: flex-start;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__label {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--tb-label-bg);
+    color: var(--tb-label-text);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__title {
+    display: block;
+    color: var(--tb-title-color);
+    font-size: var(--tb-title-size);
+    font-weight: var(--tb-title-weight);
+    letter-spacing: var(--tb-title-ls);
+    line-height: 1.25;
+    text-transform: {{ s.title_transform }};
+  }
+
+  #TrustBadges-{{ section.id }} .tb__text {
+    display: block;
+    color: var(--tb-text-color);
+    font-size: var(--tb-text-size);
+  }
+
+  #TrustBadges-{{ section.id }} .tb__text a {
+    color: inherit;
+  }
+
+  /* ---------- Dividers (best with Minimal style) ---------- */
+  #TrustBadges-{{ section.id }}.tb--dividers .tb__item::before {
+    content: '';
+    position: absolute;
+    display: none;
+    background: var(--tb-divider);
+    pointer-events: none;
+  }
+
+  @media screen and (min-width: 990px) {
+    #TrustBadges-{{ section.id }}.tb--dividers .tb__item::before {
+      display: block;
+      top: 18%;
+      bottom: 18%;
+      left: calc(var(--tb-gap) / -2 - 0.5px);
+      width: 1px;
+    }
+
+    #TrustBadges-{{ section.id }}.tb--dividers .tb__item:nth-child({{ cols_d }}n + 1)::before {
+      display: none;
+    }
+  }
+
+  /* ---------- Payment icons ---------- */
+  #TrustBadges-{{ section.id }} .tb__payments {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    margin-top: var(--tb-payment-gap);
+    {% case s.heading_align %}
+      {% when 'center' %}justify-content: center;
+      {% when 'right' %}justify-content: flex-end;
+      {% else %}justify-content: flex-start;
+    {% endcase %}
+  }
+
+  #TrustBadges-{{ section.id }} .tb__payments-text {
+    margin: 0;
+    color: var(--tb-text-color);
+    font-size: var(--tb-text-size);
+  }
+
+  #TrustBadges-{{ section.id }} .tb__payment-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  #TrustBadges-{{ section.id }} .tb__payment-icon svg {
+    display: block;
+    width: auto;
+    height: var(--tb-payment-h);
+    transition: filter 0.3s ease, opacity 0.3s ease;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--pay-mono .tb__payment-icon svg {
+    filter: grayscale(1);
+    opacity: 0.7;
+  }
+
+  #TrustBadges-{{ section.id }}.tb--pay-mono .tb__payment-icon:hover svg {
+    filter: none;
+    opacity: 1;
+  }
+
+  /* ---------- Entrance animations ---------- */
+  #TrustBadges-{{ section.id }}.tb--js .tb__header,
+  #TrustBadges-{{ section.id }}.tb--js .tb__payments,
+  #TrustBadges-{{ section.id }}.tb--js .tb__item {
+    opacity: 0;
+    transition:
+      opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      filter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition-delay: calc(var(--tb-i, 0) * var(--tb-stagger));
+  }
+
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-fade_up .tb__header,
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-fade_up .tb__payments,
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-fade_up .tb__item {
+    transform: translateY(28px);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-zoom .tb__header,
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-zoom .tb__payments,
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-zoom .tb__item {
+    transform: scale(0.92);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-blur .tb__header,
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-blur .tb__payments,
+  #TrustBadges-{{ section.id }}.tb--js.tb--entrance-blur .tb__item {
+    filter: blur(10px);
+    transform: translateY(12px);
+  }
+
+  #TrustBadges-{{ section.id }}.tb--js .tb__header.is-visible,
+  #TrustBadges-{{ section.id }}.tb--js .tb__payments.is-visible,
+  #TrustBadges-{{ section.id }}.tb--js .tb__list.is-visible .tb__item {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  /* After the entrance finishes, hover transforms respond instantly */
+  #TrustBadges-{{ section.id }}.tb--js .tb__list.is-done .tb__item {
+    transition: none;
+  }
+
+  /* ---------- Tablet ---------- */
+  @media screen and (min-width: 750px) and (max-width: 989px) {
+    #TrustBadges-{{ section.id }} {
+      --tb-cols: {{ cols_t }};
+    }
+
+    {% if s.show_dividers %}
+      #TrustBadges-{{ section.id }}.tb--dividers .tb__item::before {
+        display: block;
+        top: 18%;
+        bottom: 18%;
+        left: calc(var(--tb-gap) / -2 - 0.5px);
+        width: 1px;
+      }
+
+      #TrustBadges-{{ section.id }}.tb--dividers .tb__item:nth-child({{ cols_t }}n + 1)::before {
+        display: none;
+      }
+    {% endif %}
+  }
+
+  /* ---------- Mobile ---------- */
+  @media screen and (max-width: 749px) {
+    #TrustBadges-{{ section.id }} {
+      --tb-cols: {{ cols_m }};
+      --tb-pt: {{ s.padding_top_mobile }}px;
+      --tb-pb: {{ s.padding_bottom_mobile }}px;
+      --tb-side: {{ s.side_padding_mobile }}px;
+      --tb-gap: {{ s.gap_mobile }}px;
+      --tb-card-pad: {{ s.card_padding_mobile }}px;
+      --tb-icon-size: {{ s.icon_size_mobile }}px;
+      --tb-heading-size: {{ s.heading_size_mobile }}px;
+      --tb-sub-size: {{ s.subheading_size_mobile }}px;
+      --tb-title-size: {{ s.title_size_mobile }}px;
+      --tb-text-size: {{ s.text_size_mobile }}px;
+      --tb-payment-h: {{ s.payment_icon_height_mobile }}px;
+      --tb-header-gap: calc({{ s.header_spacing }}px * 0.75);
+    }
+
+    /* Mobile card layout */
+    #TrustBadges-{{ section.id }}.tb.tb.tb--mlayout-inline .tb__card {
+      flex-direction: row;
+      align-items: center;
+      text-align: left;
+    }
+
+    #TrustBadges-{{ section.id }}.tb.tb.tb--mlayout-inline .tb__content {
+      align-items: flex-start;
+    }
+
+    #TrustBadges-{{ section.id }}.tb.tb.tb--mlayout-stacked .tb__card {
+      flex-direction: column;
+      {% if s.text_align == 'center' %}
+        align-items: center;
+        text-align: center;
+      {% else %}
+        align-items: flex-start;
+        text-align: left;
+      {% endif %}
+    }
+
+    #TrustBadges-{{ section.id }}.tb.tb.tb--mlayout-stacked .tb__content {
+      align-items: {% if s.text_align == 'center' %}center{% else %}flex-start{% endif %};
+    }
+
+    /* Swipe carousel */
+    #TrustBadges-{{ section.id }}.tb--mobile-swipe .tb__list {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: var(--tb-swipe-w);
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-left: var(--tb-side);
+      margin-left: calc(var(--tb-side) * -1);
+      margin-right: calc(var(--tb-side) * -1);
+      padding: 8px var(--tb-side) 12px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #TrustBadges-{{ section.id }}.tb--mobile-swipe .tb__list::-webkit-scrollbar {
+      display: none;
+    }
+
+    #TrustBadges-{{ section.id }}.tb--mobile-swipe .tb__item {
+      scroll-snap-align: start;
+    }
+
+    {% if s.show_dividers %}
+      {% if s.mobile_display == 'swipe' %}
+        #TrustBadges-{{ section.id }}.tb--dividers .tb__item::before {
+          display: block;
+          top: 18%;
+          bottom: 18%;
+          left: calc(var(--tb-gap) / -2 - 0.5px);
+          width: 1px;
+        }
+
+        #TrustBadges-{{ section.id }}.tb--dividers .tb__item:first-child::before {
+          display: none;
+        }
+      {% elsif cols_m == 1 %}
+        #TrustBadges-{{ section.id }}.tb--dividers .tb__item::before {
+          display: block;
+          top: calc(var(--tb-gap) / -2 - 0.5px);
+          left: 0;
+          right: 0;
+          height: 1px;
+        }
+
+        #TrustBadges-{{ section.id }}.tb--dividers .tb__item:first-child::before {
+          display: none;
+        }
+      {% else %}
+        #TrustBadges-{{ section.id }}.tb--dividers .tb__item::before {
+          display: block;
+          top: 18%;
+          bottom: 18%;
+          left: calc(var(--tb-gap) / -2 - 0.5px);
+          width: 1px;
+        }
+
+        #TrustBadges-{{ section.id }}.tb--dividers .tb__item:nth-child({{ cols_m }}n + 1)::before {
+          display: none;
+        }
+      {% endif %}
+    {% endif %}
+  }
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    #TrustBadges-{{ section.id }} .tb__card,
+    #TrustBadges-{{ section.id }} .tb__icon,
+    #TrustBadges-{{ section.id }} .tb__item,
+    #TrustBadges-{{ section.id }} .tb__header,
+    #TrustBadges-{{ section.id }} .tb__payments {
+      transition: none !important;
+      animation: none !important;
+      transform: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    #TrustBadges-{{ section.id }} .tb__card::before {
+      animation: none !important;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    var root = document.getElementById('TrustBadges-{{ section.id }}');
+
+    if (!root) {
+      return;
+    }
+
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var inEditor = window.Shopify && window.Shopify.designMode;
+
+    /*
+     * Entrance animation.
+     * Content stays visible if JavaScript is off, in the theme
+     * editor, or when the visitor prefers reduced motion.
+     */
+    var entrance = root.getAttribute('data-entrance');
+
+    if (
+      entrance &&
+      entrance !== 'none' &&
+      !reducedMotion &&
+      !inEditor &&
+      'IntersectionObserver' in window
+    ) {
+      root.classList.add('tb--js');
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) {
+              return;
+            }
+
+            var el = entry.target;
+            el.classList.add('is-visible');
+            observer.unobserve(el);
+
+            /* Let hover effects react instantly once items have landed */
+            if (el.classList.contains('tb__list')) {
+              var items = el.querySelectorAll('.tb__item').length;
+              var stagger = {{ s.stagger | json }};
+              setTimeout(function () {
+                el.classList.add('is-done');
+              }, 900 + items * stagger);
+            }
+          });
+        },
+        { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      root.querySelectorAll('.tb__reveal').forEach(function (el) {
+        observer.observe(el);
+      });
+    }
+
+    /*
+     * Cursor spotlight.
+     */
+    if (
+      root.classList.contains('tb--spotlight') &&
+      window.matchMedia('(hover: hover)').matches
+    ) {
+      root.querySelectorAll('.tb__card').forEach(function (card) {
+        card.addEventListener(
+          'pointermove',
+          function (event) {
+            var rect = card.getBoundingClientRect();
+            card.style.setProperty('--tb-mx', event.clientX - rect.left + 'px');
+            card.style.setProperty('--tb-my', event.clientY - rect.top + 'px');
+          },
+          { passive: true }
+        );
+      });
+    }
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Trust Badges",
+  "tag": "div",
+  "class": "trust-badges-section",
+  "max_blocks": 12,
+
+  "settings": [
+
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "card_style",
+      "label": "Card style",
+      "options": [
+        { "value": "solid", "label": "Solid card" },
+        { "value": "glass", "label": "Glass (frosted)" },
+        { "value": "gradient", "label": "Gradient border" },
+        { "value": "outline", "label": "Outline" },
+        { "value": "minimal", "label": "Minimal (no card)" }
+      ],
+      "default": "solid"
+    },
+    {
+      "type": "select",
+      "id": "card_layout",
+      "label": "Card layout",
+      "options": [
+        { "value": "stacked", "label": "Icon on top" },
+        { "value": "inline", "label": "Icon on the left" }
+      ],
+      "default": "stacked"
+    },
+    {
+      "type": "select",
+      "id": "text_align",
+      "label": "Card text alignment",
+      "info": "Applies when the icon is on top.",
+      "options": [
+        { "value": "center", "label": "Center" },
+        { "value": "left", "label": "Left" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "label": "Columns on desktop",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "columns_tablet",
+      "label": "Columns on tablet",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "checkbox",
+      "id": "show_dividers",
+      "label": "Show dividers between badges",
+      "info": "Looks best with the Minimal card style.",
+      "default": false
+    },
+
+    {
+      "type": "header",
+      "content": "Mobile layout"
+    },
+    {
+      "type": "select",
+      "id": "mobile_display",
+      "label": "Mobile display",
+      "options": [
+        { "value": "grid", "label": "Grid" },
+        { "value": "swipe", "label": "Swipe carousel" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "range",
+      "id": "columns_mobile",
+      "label": "Columns on mobile",
+      "info": "Used with the Grid display.",
+      "min": 1,
+      "max": 2,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "swipe_width",
+      "label": "Card width in swipe carousel",
+      "info": "Lower values show more of the next card.",
+      "min": 50,
+      "max": 95,
+      "step": 5,
+      "unit": "%",
+      "default": 75
+    },
+    {
+      "type": "select",
+      "id": "mobile_card_layout",
+      "label": "Mobile card layout",
+      "options": [
+        { "value": "same", "label": "Same as desktop" },
+        { "value": "stacked", "label": "Icon on top" },
+        { "value": "inline", "label": "Icon on the left" }
+      ],
+      "default": "same"
+    },
+
+    {
+      "type": "header",
+      "content": "Section heading"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Small text above heading",
+      "default": "Why shop with us"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "info": "Make a word italic to highlight it (see Highlight style).",
+      "default": "Shop with <em>complete</em> confidence"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Every order is protected, tracked and backed by real people."
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Heading tag (SEO)",
+      "options": [
+        { "value": "h2", "label": "H2" },
+        { "value": "h3", "label": "H3" },
+        { "value": "p", "label": "Paragraph" }
+      ],
+      "default": "h2"
+    },
+    {
+      "type": "select",
+      "id": "heading_align",
+      "label": "Heading alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "heading_highlight",
+      "label": "Highlight style for italic words",
+      "options": [
+        { "value": "gradient", "label": "Gradient text" },
+        { "value": "accent", "label": "Accent color" },
+        { "value": "none", "label": "Keep italic" }
+      ],
+      "default": "gradient"
+    },
+    {
+      "type": "range",
+      "id": "header_spacing",
+      "label": "Space below heading",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+
+    {
+      "type": "header",
+      "content": "Heading typography"
+    },
+    {
+      "type": "font_picker",
+      "id": "heading_font",
+      "label": "Heading font",
+      "default": "roboto_n4"
+    },
+    {
+      "type": "select",
+      "id": "heading_weight",
+      "label": "Heading weight",
+      "options": [
+        { "value": "400", "label": "Regular" },
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" },
+        { "value": "800", "label": "Extra bold" }
+      ],
+      "default": "700"
+    },
+    {
+      "type": "select",
+      "id": "heading_transform",
+      "label": "Heading text transform",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "uppercase", "label": "Uppercase" },
+        { "value": "capitalize", "label": "Capitalize" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Desktop heading size",
+      "min": 18,
+      "max": 72,
+      "step": 1,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "label": "Mobile heading size",
+      "min": 16,
+      "max": 48,
+      "step": 1,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "heading_letter_spacing",
+      "label": "Heading letter spacing",
+      "min": -3,
+      "max": 3,
+      "step": 0.5,
+      "unit": "px",
+      "default": -1
+    },
+    {
+      "type": "range",
+      "id": "eyebrow_size",
+      "label": "Small text size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+    {
+      "type": "range",
+      "id": "subheading_size",
+      "label": "Desktop subheading size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 17
+    },
+    {
+      "type": "range",
+      "id": "subheading_size_mobile",
+      "label": "Mobile subheading size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+
+    {
+      "type": "header",
+      "content": "Badge typography"
+    },
+    {
+      "type": "font_picker",
+      "id": "body_font",
+      "label": "Badge font",
+      "default": "roboto_n4"
+    },
+    {
+      "type": "select",
+      "id": "title_weight",
+      "label": "Title weight",
+      "options": [
+        { "value": "400", "label": "Regular" },
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" },
+        { "value": "800", "label": "Extra bold" }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "select",
+      "id": "title_transform",
+      "label": "Title text transform",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "uppercase", "label": "Uppercase" },
+        { "value": "capitalize", "label": "Capitalize" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "title_letter_spacing",
+      "label": "Title letter spacing",
+      "min": -1,
+      "max": 4,
+      "step": 0.5,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Desktop title size",
+      "min": 12,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 17
+    },
+    {
+      "type": "range",
+      "id": "title_size_mobile",
+      "label": "Mobile title size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "text_size",
+      "label": "Desktop description size",
+      "min": 11,
+      "max": 22,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "text_size_mobile",
+      "label": "Mobile description size",
+      "min": 11,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+    {
+      "type": "range",
+      "id": "line_height",
+      "label": "Line height",
+      "min": 1,
+      "max": 2,
+      "step": 0.1,
+      "default": 1.5
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color_background",
+      "id": "background_gradient",
+      "label": "Background gradient",
+      "info": "Overrides the background color when set."
+    },
+    {
+      "type": "color",
+      "id": "eyebrow_color",
+      "label": "Small text color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "subheading_color",
+      "label": "Subheading color",
+      "default": "#6B6B78"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Badge title color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Badge description color",
+      "default": "#6B6B78"
+    },
+    {
+      "type": "color",
+      "id": "card_bg",
+      "label": "Card background",
+      "default": "#F6F6FA"
+    },
+    {
+      "type": "range",
+      "id": "card_opacity",
+      "label": "Card background opacity",
+      "info": "Use 5–20% with the Glass style on dark or gradient backgrounds.",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "card_border_color",
+      "label": "Card border color",
+      "default": "#ECECF2"
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Icon color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "icon_bg_color",
+      "label": "Icon background",
+      "info": "Used with the Solid icon background.",
+      "default": "#EEEBFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_1",
+      "label": "Accent color 1",
+      "info": "Used for gradients, glows and highlights.",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "accent_2",
+      "label": "Accent color 2",
+      "default": "#FF6B9A"
+    },
+    {
+      "type": "color",
+      "id": "divider_color",
+      "label": "Divider color",
+      "default": "#E4E4EC"
+    },
+    {
+      "type": "color",
+      "id": "label_bg",
+      "label": "Tag background",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "label_text",
+      "label": "Tag text",
+      "default": "#FFFFFF"
+    },
+
+    {
+      "type": "header",
+      "content": "Card design"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "label": "Border width",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "select",
+      "id": "card_shadow",
+      "label": "Shadow",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "soft", "label": "Soft" },
+        { "value": "medium", "label": "Medium" },
+        { "value": "strong", "label": "Strong" },
+        { "value": "glow", "label": "Accent glow" }
+      ],
+      "default": "soft"
+    },
+    {
+      "type": "range",
+      "id": "glass_blur",
+      "label": "Glass blur",
+      "info": "Used with the Glass style.",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "card_padding",
+      "label": "Desktop card padding",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "card_padding_mobile",
+      "label": "Mobile card padding",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "content_gap",
+      "label": "Space between icon and text",
+      "min": 4,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+
+    {
+      "type": "header",
+      "content": "Icons"
+    },
+    {
+      "type": "select",
+      "id": "icon_background",
+      "label": "Icon background",
+      "options": [
+        { "value": "soft", "label": "Soft tint" },
+        { "value": "solid", "label": "Solid color" },
+        { "value": "gradient", "label": "Accent gradient" },
+        { "value": "outline", "label": "Outline ring" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "soft"
+    },
+    {
+      "type": "select",
+      "id": "icon_shape",
+      "label": "Icon background shape",
+      "options": [
+        { "value": "rounded", "label": "Rounded" },
+        { "value": "circle", "label": "Circle" },
+        { "value": "square", "label": "Square" }
+      ],
+      "default": "rounded"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Desktop icon size",
+      "min": 16,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 26
+    },
+    {
+      "type": "range",
+      "id": "icon_size_mobile",
+      "label": "Mobile icon size",
+      "min": 14,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 22
+    },
+    {
+      "type": "range",
+      "id": "icon_padding",
+      "label": "Icon background padding",
+      "min": 0,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+    {
+      "type": "range",
+      "id": "icon_stroke",
+      "label": "Icon line thickness",
+      "min": 1,
+      "max": 3,
+      "step": 0.25,
+      "default": 1.75
+    },
+
+    {
+      "type": "header",
+      "content": "Effects"
+    },
+    {
+      "type": "select",
+      "id": "hover_effect",
+      "label": "Card hover effect",
+      "options": [
+        { "value": "lift", "label": "Lift" },
+        { "value": "scale", "label": "Scale" },
+        { "value": "glow", "label": "Accent glow" },
+        { "value": "border", "label": "Accent border" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "lift"
+    },
+    {
+      "type": "select",
+      "id": "icon_hover",
+      "label": "Icon hover effect",
+      "options": [
+        { "value": "pop", "label": "Pop" },
+        { "value": "rotate", "label": "Spin" },
+        { "value": "bounce", "label": "Bounce" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "pop"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_spotlight",
+      "label": "Cursor spotlight",
+      "info": "A soft light follows the mouse over each card (desktop only).",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "spotlight_color",
+      "label": "Spotlight color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "range",
+      "id": "spotlight_strength",
+      "label": "Spotlight strength",
+      "min": 5,
+      "max": 60,
+      "step": 5,
+      "unit": "%",
+      "default": 15
+    },
+    {
+      "type": "checkbox",
+      "id": "animate_border",
+      "label": "Animate gradient border",
+      "info": "Used with the Gradient border style.",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "border_speed",
+      "label": "Border animation speed",
+      "min": 2,
+      "max": 20,
+      "step": 1,
+      "unit": "s",
+      "default": 6
+    },
+    {
+      "type": "select",
+      "id": "background_effect",
+      "label": "Background effect",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "glow", "label": "Accent glow" },
+        { "value": "grid", "label": "Grid lines" },
+        { "value": "dots", "label": "Dot pattern" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "color",
+      "id": "effect_color",
+      "label": "Pattern color",
+      "info": "Used with Grid lines and Dot pattern.",
+      "default": "#111118"
+    },
+    {
+      "type": "range",
+      "id": "effect_strength",
+      "label": "Background effect strength",
+      "min": 2,
+      "max": 40,
+      "step": 2,
+      "unit": "%",
+      "default": 10
+    },
+
+    {
+      "type": "header",
+      "content": "Scroll animation"
+    },
+    {
+      "type": "select",
+      "id": "entrance_animation",
+      "label": "Entrance animation",
+      "info": "Plays when the section scrolls into view. Hidden in the theme editor.",
+      "options": [
+        { "value": "fade_up", "label": "Fade up" },
+        { "value": "fade", "label": "Fade" },
+        { "value": "zoom", "label": "Zoom in" },
+        { "value": "blur", "label": "Blur in" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "fade_up"
+    },
+    {
+      "type": "range",
+      "id": "stagger",
+      "label": "Delay between badges",
+      "min": 0,
+      "max": 300,
+      "step": 20,
+      "unit": "ms",
+      "default": 80
+    },
+
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Full width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Content max width",
+      "min": 800,
+      "max": 1800,
+      "step": 20,
+      "unit": "px",
+      "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Desktop top padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Desktop bottom padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "label": "Mobile top padding",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 52
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "label": "Mobile bottom padding",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 52
+    },
+    {
+      "type": "range",
+      "id": "side_padding",
+      "label": "Desktop side padding",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "side_padding_mobile",
+      "label": "Mobile side padding",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Desktop space between badges",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "gap_mobile",
+      "label": "Mobile space between badges",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+
+    {
+      "type": "header",
+      "content": "Payment icons"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_icons",
+      "label": "Show payment icons",
+      "info": "Shows the payment methods enabled in your Shopify payments settings.",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "payment_text",
+      "label": "Text before icons",
+      "default": "Secure checkout with"
+    },
+    {
+      "type": "range",
+      "id": "payment_icon_height",
+      "label": "Desktop icon height",
+      "min": 16,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 26
+    },
+    {
+      "type": "range",
+      "id": "payment_icon_height_mobile",
+      "label": "Mobile icon height",
+      "min": 14,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 22
+    },
+    {
+      "type": "checkbox",
+      "id": "payment_grayscale",
+      "label": "Grayscale icons (color on hover)",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "payment_spacing",
+      "label": "Space above payment icons",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 36
+    }
+
+  ],
+
+  "blocks": [
+    {
+      "type": "badge",
+      "name": "Badge",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            { "value": "shield", "label": "Shield / secure", "group": "Trust" },
+            { "value": "lock", "label": "Lock", "group": "Trust" },
+            { "value": "badge", "label": "Verified badge", "group": "Trust" },
+            { "value": "check", "label": "Check circle", "group": "Trust" },
+            { "value": "award", "label": "Award / medal", "group": "Trust" },
+            { "value": "star", "label": "Star / rating", "group": "Trust" },
+            { "value": "thumbs", "label": "Thumbs up", "group": "Trust" },
+            { "value": "truck", "label": "Delivery truck", "group": "Shipping" },
+            { "value": "package", "label": "Package", "group": "Shipping" },
+            { "value": "globe", "label": "Worldwide", "group": "Shipping" },
+            { "value": "pin", "label": "Location pin", "group": "Shipping" },
+            { "value": "clock", "label": "Clock / fast", "group": "Shipping" },
+            { "value": "zap", "label": "Lightning / express", "group": "Shipping" },
+            { "value": "returns", "label": "Easy returns", "group": "Returns & payment" },
+            { "value": "refresh", "label": "Exchange", "group": "Returns & payment" },
+            { "value": "card", "label": "Credit card", "group": "Returns & payment" },
+            { "value": "cash", "label": "Cash / COD", "group": "Returns & payment" },
+            { "value": "tag", "label": "Price tag", "group": "Returns & payment" },
+            { "value": "gift", "label": "Gift", "group": "Returns & payment" },
+            { "value": "support", "label": "Customer support", "group": "Product & care" },
+            { "value": "users", "label": "Community", "group": "Product & care" },
+            { "value": "heart", "label": "Heart", "group": "Product & care" },
+            { "value": "leaf", "label": "Leaf / natural", "group": "Product & care" },
+            { "value": "flask", "label": "Lab tested", "group": "Product & care" },
+            { "value": "sparkles", "label": "Sparkles / premium", "group": "Product & care" },
+            { "value": "custom", "label": "Custom image (upload below)", "group": "Other" },
+            { "value": "none", "label": "No icon", "group": "Other" }
+          ],
+          "default": "shield"
+        },
+        {
+          "type": "image_picker",
+          "id": "custom_icon",
+          "label": "Custom icon image",
+          "info": "Choose \"Custom image\" above. PNG or SVG with transparent background works best."
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Tag (optional)",
+          "info": "Small pill above the title, e.g. NEW or 24/7."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Secure checkout"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Description",
+          "default": "256-bit SSL encrypted payments"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Link (optional)"
+        },
+        {
+          "type": "checkbox",
+          "id": "use_custom_color",
+          "label": "Use custom icon colors for this badge",
+          "default": false
+        },
+        {
+          "type": "color",
+          "id": "custom_icon_color",
+          "label": "Icon color",
+          "default": "#16A34A"
+        },
+        {
+          "type": "color",
+          "id": "custom_icon_bg",
+          "label": "Icon background",
+          "info": "Used with the Solid icon background.",
+          "default": "#DCFCE7"
+        }
+      ]
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "Trust Badges",
+      "blocks": [
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "truck",
+            "title": "Free shipping",
+            "text": "On all orders over $50"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "returns",
+            "title": "30-day returns",
+            "text": "Hassle-free refunds, no questions asked"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "shield",
+            "title": "Secure checkout",
+            "text": "256-bit SSL encrypted payments"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "support",
+            "title": "Real human support",
+            "text": "We reply within 24 hours"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trust Badges — Dark Gradient",
+      "settings": {
+        "card_style": "gradient",
+        "background_color": "#0B0B14",
+        "background_gradient": "linear-gradient(160deg, rgba(11, 11, 20, 1) 0%, rgba(26, 18, 48, 1) 100%)",
+        "background_effect": "glow",
+        "effect_strength": 14,
+        "eyebrow_color": "#B7A9FF",
+        "heading_color": "#FFFFFF",
+        "subheading_color": "#A3A3BA",
+        "title_color": "#FFFFFF",
+        "text_color": "#A3A3BA",
+        "card_bg": "#FFFFFF",
+        "card_opacity": 5,
+        "card_border_color": "#2A2640",
+        "icon_color": "#FFFFFF",
+        "icon_background": "gradient",
+        "icon_shape": "circle",
+        "card_shadow": "none",
+        "hover_effect": "glow",
+        "spotlight_color": "#8B7BFF",
+        "spotlight_strength": 20,
+        "label_bg": "#FFFFFF",
+        "label_text": "#111118",
+        "eyebrow": "The promise",
+        "heading": "Built on <em>trust</em>, not fine print",
+        "subheading": "Thousands of happy customers, protected by guarantees that actually mean something."
+      },
+      "blocks": [
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "zap",
+            "title": "Express delivery",
+            "text": "Dispatched within 24 hours"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "badge",
+            "title": "100% authentic",
+            "text": "Sourced directly from the makers"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "lock",
+            "title": "Safe payments",
+            "text": "UPI, cards, wallets & COD"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "star",
+            "label": "4.9/5",
+            "title": "Loved by customers",
+            "text": "Over 10,000 verified reviews"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trust Badges — Minimal Strip",
+      "settings": {
+        "card_style": "minimal",
+        "card_layout": "inline",
+        "text_align": "left",
+        "show_dividers": true,
+        "eyebrow": "",
+        "heading": "",
+        "subheading": "",
+        "card_padding": 8,
+        "card_padding_mobile": 6,
+        "padding_top": 32,
+        "padding_bottom": 32,
+        "padding_top_mobile": 24,
+        "padding_bottom_mobile": 24,
+        "gap": 40,
+        "gap_mobile": 20,
+        "icon_background": "none",
+        "icon_size": 30,
+        "icon_size_mobile": 24,
+        "content_gap": 14,
+        "title_size": 15,
+        "title_size_mobile": 13,
+        "text_size": 13,
+        "text_size_mobile": 12,
+        "background_color": "#FAFAFC",
+        "icon_color": "#111118",
+        "enable_spotlight": false,
+        "hover_effect": "none",
+        "card_shadow": "none",
+        "stagger": 60
+      },
+      "blocks": [
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "truck",
+            "title": "Free shipping",
+            "text": "Orders over $50"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "returns",
+            "title": "Easy returns",
+            "text": "Within 30 days"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "lock",
+            "title": "Secure payment",
+            "text": "SSL encrypted"
+          }
+        },
+        {
+          "type": "badge",
+          "settings": {
+            "icon": "support",
+            "title": "24/7 support",
+            "text": "Always here to help"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
