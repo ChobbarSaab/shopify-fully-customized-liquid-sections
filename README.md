@@ -1,88 +1,115 @@
 # 🛍️ Shopify Custom Sections
 
-A growing collection of reusable, responsive, and highly customizable **Shopify Online Store 2.0 sections and UI components** built with Liquid, CSS, and JavaScript.
+A growing collection of reusable, responsive and **fully customizable Shopify Online Store 2.0 sections**, built with Liquid, CSS and JavaScript.
 
-These components are designed to be easy to drop into Shopify themes and customize directly from the **Shopify Theme Editor**.
+Drop a section into any modern theme and control everything (layout, colors, fonts, spacing, animations, mobile settings) from the **Shopify Theme Editor**. No apps, no monthly fees, no external libraries.
 
 ---
 
 ## ✨ What's Inside
 
-A collection of production-ready Shopify sections for common e-commerce use cases.
-
-| Component               | Description                             | Status         |
-| ----------------------- | --------------------------------------- | -------------- |
-| 📢 Marquee Announcement | Seamless scrolling announcement bar     | ✅ Ready        |
-| ⭐ Trust Badges          | Trust, guarantee and payment badges     | 🚧 Coming Soon |
-| 💬 Testimonials         | Responsive customer testimonial section | 🚧 Coming Soon |
-| ⏱️ Countdown Timer      | Customizable urgency countdown          | 🚧 Coming Soon |
-| ❓ FAQ Accordion         | Responsive FAQ section                  | 🚧 Coming Soon |
-| 🖼️ Before / After      | Interactive comparison slider           | 🚧 Coming Soon |
-| 🏷️ Logo Marquee        | Infinite scrolling brand logo section   | 🚧 Coming Soon |
-| 🛒 Sticky Add to Cart   | Floating product purchase bar           | 🚧 Coming Soon |
-
-More components will be added over time.
+| Component | Description | Settings | Status |
+| --- | --- | --- | --- |
+| 📢 [Marquee Announcement](./announcement-bar) | Seamless scrolling announcement bar | 25+ | ✅ Ready |
+| ⭐ [Trust Badges](./trust-badges) | Shipping, returns, secure checkout and payment badges | 100+ | ✅ Ready |
+| ❓ [FAQ Accordion](./faq-accordion) | FAQs with topic tabs, search and Google FAQ schema | 125+ | ✅ Ready |
+| ⏱️ [Countdown Timer](./countdown-timer) | Fixed, evergreen and daily sale timers | 130+ | ✅ Ready |
+| 💬 [Testimonials](./testimonials) | Grid, carousel, masonry and scrolling "wall of love" | 135+ | ✅ Ready |
+| 🖼️ Before / After | Interactive image comparison slider | | 🚧 Coming Soon |
+| 🏷️ Logo Marquee | Infinite scrolling brand logo strip | | 🚧 Coming Soon |
+| 🛒 Sticky Add to Cart | Floating product purchase bar | | 🚧 Coming Soon |
 
 ---
 
-## 🚀 Features
+## 👀 Previews
 
-Depending on the component, sections may include:
+### 📢 Marquee Announcement
 
-* Shopify Theme Editor customization
-* Responsive desktop / tablet / mobile layouts
-* Custom colors
-* Typography controls
-* Font picker
-* Spacing controls
-* Animation controls
-* Hover interactions
-* Mobile-specific settings
-* Accessibility support
-* Reduced-motion support
-* Individual content blocks
-* Optional links
-* No external libraries unless required
+A continuously scrolling announcement bar with multiple messages, links, separators and edge fade.
+
+![Marquee Announcement](./announcement-bar/preview.png)
+
+### ⭐ Trust Badges
+
+5 card styles, 26 built-in icons, cursor spotlight, animated gradient borders and an optional payment icons row.
+
+![Trust Badges](./trust-badges/preview.png)
+
+[Full details →](./trust-badges)
+
+### ❓ FAQ Accordion
+
+3 layouts, topic tabs, live search, a "Still have questions?" contact card and Google FAQ rich-results schema.
+
+![FAQ Accordion](./faq-accordion/preview.png)
+
+[Full details →](./faq-accordion)
+
+### ⏱️ Countdown Timer
+
+Fixed date, per-visitor evergreen or daily reset timers, with progress rings, coupon copy and a slim announcement-bar mode.
+
+![Countdown Timer](./countdown-timer/preview.png)
+
+[Full details →](./countdown-timer)
+
+### 💬 Testimonials
+
+Star ratings, auto initials, verified badges, purchased products and review photos, in 4 layouts.
+
+![Testimonials](./testimonials/preview.png)
+
+[Full details →](./testimonials)
+
+---
+
+## 🚀 What every section includes
+
+- Full control from the Shopify Theme Editor, no code editing needed
+- Ready-made presets to start from (light, dark and minimal looks)
+- Separate desktop, tablet and mobile settings
+- Font pickers, color controls, spacing and size sliders
+- Modern effects: glass cards, gradient borders, cursor spotlight, scroll-in animations
+- Gradient highlight for any italic word in a heading
+- Accessible markup, keyboard support and `prefers-reduced-motion` support
+- Scoped CSS, so sections never clash with your theme or with each other
+- Lightweight vanilla JavaScript, no external libraries
 
 ---
 
 ## 📦 Installation
 
-Most components are designed to work with **Shopify Online Store 2.0 themes**.
+1. In Shopify Admin, go to **Online Store → Themes → … → Edit code**.
+2. In the `sections` folder, click **Add a new section**.
+3. Give it the same name as the file (e.g. `trust-badges`).
+4. Delete the starter code, paste the full contents of the `.liquid` file, and click **Save**.
+5. Open **Customize**, click **Add section**, and pick the section (or one of its presets).
 
-### Method 1 — Add as a Section
-
-1. Open your Shopify Admin.
-2. Go to **Online Store → Themes → Edit code**.
-3. Open the `sections` folder.
-4. Create a new `.liquid` file.
-5. Copy the component code from this repository.
-6. Paste it into the new file.
-7. Save the file.
-8. Open **Customize** in the Shopify Theme Editor.
-9. Click **Add section**.
-10. Select the component.
-
-### Method 2 — Custom Liquid
-
-Some components may also be provided as standalone snippets that can be used inside Shopify's **Custom Liquid** section.
-
-Check the individual component's README before installing.
+Each section's folder has its own README with every setting and tip explained.
 
 ---
 
 ## 📁 Repository Structure
 
 ```text
-shopify-custom-sections/
+shopify-fully-customized-liquid-sections/
 │
-├── announcement/
+├── announcement-bar/
 │   ├── marquee-announcement.liquid
-│   ├── README.md
 │   └── preview.png
 │
 ├── trust-badges/
 │   ├── trust-badges.liquid
+│   ├── README.md
+│   └── preview.png
+│
+├── faq-accordion/
+│   ├── faq-accordion.liquid
+│   ├── README.md
+│   └── preview.png
+│
+├── countdown-timer/
+│   ├── countdown-timer.liquid
 │   ├── README.md
 │   └── preview.png
 │
@@ -94,194 +121,43 @@ shopify-custom-sections/
 └── README.md
 ```
 
-Each component should ideally contain:
-
-* `.liquid` source file
-* `README.md`
-* `preview.png`
-
----
-
-# 📢 Marquee Announcement
-
-A premium, continuously scrolling announcement bar for Shopify.
-
-### Features
-
-* Seamless infinite scrolling
-* Right-to-left or left-to-right direction
-* Multiple announcement blocks
-* Individual announcement links
-* Adjustable scrolling speed
-* Pause on hover
-* Shopify font picker
-* Font weight control
-* Text transformation
-* Text decoration
-* Desktop and mobile font sizes
-* Desktop and mobile spacing
-* Desktop and mobile bar height
-* Custom background color
-* Custom text color
-* Custom separator color
-* Multiple separator styles
-* Separator size control
-* Separator spacing
-* Optional edge fade
-* Responsive design
-* `prefers-reduced-motion` support
-* Automatic content duplication for seamless looping
-
-### Preview
-
-*Add preview image here.*
-
----
-
-## 🎨 Customization
-
-Components are designed to expose important settings through the Shopify Theme Editor rather than requiring users to edit the code manually.
-
-For example, the Marquee Announcement section provides controls for:
-
-**Animation**
-
-* Speed
-* Direction
-* Pause on hover
-
-**Typography**
-
-* Font
-* Font weight
-* Font size
-* Letter spacing
-* Text transform
-* Text decoration
-* Line height
-
-**Layout**
-
-* Bar height
-* Announcement spacing
-* Mobile height
-* Mobile spacing
-
-**Colors**
-
-* Background
-* Text
-* Separators
-
-**Separators**
-
-* Style
-* Size
-* Spacing
-* Visibility
-
-**Effects**
-
-* Edge fade
-
 ---
 
 ## 🧩 Compatibility
 
-Designed primarily for:
+Built for **Shopify Online Store 2.0** themes, including Dawn and other modern themes. Heavily customized or legacy (vintage) themes may need small adjustments.
 
-* Shopify Online Store 2.0
-* Modern Shopify themes
-* Responsive storefronts
-* Shopify Theme Editor
-
-Compatibility with heavily customized or legacy themes may require minor adjustments.
-
----
-
-## ⚡ Performance
-
-The components aim to remain lightweight and avoid unnecessary dependencies.
-
-Where possible:
-
-* CSS is used for animations
-* JavaScript is kept minimal
-* No external libraries are required
-* Components use scoped styles
-* Responsive behavior is handled with CSS
-
----
-
-## ♿ Accessibility
-
-Accessibility is considered during development.
-
-Depending on the component, this may include:
-
-* Reduced-motion support
-* Semantic HTML
-* Keyboard-accessible links and controls
-* Appropriate ARIA attributes
-* Readable color contrast
-* Mobile-friendly interaction
+Modern CSS features such as `color-mix`, `@property` and `backdrop-filter` are used for the newest effects; older browsers fall back to clean static styling.
 
 ---
 
 ## 🛠️ Development Guidelines
 
-When adding a new component:
+When adding a new section:
 
-1. Keep it self-contained.
-2. Avoid unnecessary dependencies.
-3. Scope CSS to the section.
-4. Use Shopify's Theme Editor settings whenever possible.
-5. Make the component responsive.
-6. Support reduced motion where animation is used.
-7. Avoid hard-coded content when it can be exposed as a setting or block.
-8. Test on both desktop and mobile.
-9. Add a preview image.
-10. Add documentation for installation and customization.
+1. Keep it self-contained in one `.liquid` file.
+2. Scope all CSS to the section ID.
+3. Expose content and styling as Theme Editor settings or blocks instead of hard-coding them.
+4. Provide separate desktop and mobile settings where sizes matter.
+5. Support reduced motion wherever there is animation.
+6. Avoid external libraries.
+7. Test on desktop and mobile.
+8. Add a `README.md` and a `preview.png` in the section's folder.
 
 ---
 
 ## 🤝 Contributing
 
-Have an idea for a useful Shopify section?
-
-Contributions and improvements are welcome.
-
-Feel free to:
-
-* Add new reusable components
-* Improve existing components
-* Fix bugs
-* Improve accessibility
-* Improve performance
-* Add documentation
-
-Please keep contributions focused on reusable Shopify theme components.
-
----
-
-## 📄 License
-
-Choose the license that matches how you want people to use these components.
-
-For example:
-
-**MIT License** — allows others to use, modify, and redistribute the code with minimal restrictions.
+Ideas, bug reports and improvements are welcome. Feel free to open an issue or a pull request, and please keep contributions focused on reusable Shopify theme sections.
 
 ---
 
 ## ⭐ Support the Project
 
-If you find these Shopify components useful, consider giving the repository a ⭐ on GitHub.
-
-More reusable Shopify components coming soon.
+If these sections help your store or your clients, consider giving the repository a ⭐ on GitHub.
 
 ---
 
 ### Built for Shopify 🛍️
 
-Reusable components. Better themes. Faster development.
+Reusable sections. Better themes. Faster development.
