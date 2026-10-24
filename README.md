@@ -21,48 +21,6 @@ Drop a section into any modern theme and control everything (layout, colors, fon
 
 ---
 
-## 👀 Previews
-
-### 📢 Marquee Announcement
-
-A continuously scrolling announcement bar with multiple messages, links, separators and edge fade.
-
-![Marquee Announcement](./announcement-bar/preview.png)
-
-### ⭐ Trust Badges
-
-5 card styles, 26 built-in icons, cursor spotlight, animated gradient borders and an optional payment icons row.
-
-![Trust Badges](./trust-badges/preview.png)
-
-[Full details →](./trust-badges)
-
-### ❓ FAQ Accordion
-
-3 layouts, topic tabs, live search, a "Still have questions?" contact card and Google FAQ rich-results schema.
-
-![FAQ Accordion](./faq-accordion/preview.png)
-
-[Full details →](./faq-accordion)
-
-### ⏱️ Countdown Timer
-
-Fixed date, per-visitor evergreen or daily reset timers, with progress rings, coupon copy and a slim announcement-bar mode.
-
-![Countdown Timer](./countdown-timer/preview.png)
-
-[Full details →](./countdown-timer)
-
-### 💬 Testimonials
-
-Star ratings, auto initials, verified badges, purchased products and review photos, in 4 layouts.
-
-![Testimonials](./testimonials/preview.png)
-
-[Full details →](./testimonials)
-
----
-
 ## 🚀 What every section includes
 
 - Full control from the Shopify Theme Editor, no code editing needed
