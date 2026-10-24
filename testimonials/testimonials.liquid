@@ -1,0 +1,2880 @@
+{%- comment -%}
+  ============================================================
+  TESTIMONIALS — fully customizable Shopify OS 2.0 section
+  ------------------------------------------------------------
+  • 4 layouts: Grid, Carousel, Masonry, Scrolling "wall of love"
+  • 5 card styles: Solid, Glass, Gradient border, Outline, Minimal
+  • Star ratings, review title, customer photo or auto initials
+  • "Verified buyer" badge, purchased product link, review photo
+  • Rating summary in the heading (e.g. 4.9 ★ from 2,000+ reviews)
+  • Carousel: arrows, dots, autoplay, swipe, loop
+  • Marquee: 1 or 2 rows, opposite directions, pause on hover
+  • Read more for long reviews, cursor spotlight, hover effects
+  • Reduced-motion support, no external libraries
+  ============================================================
+{%- endcomment -%}
+
+{%- liquid
+  assign s = section.settings
+
+  assign heading_font = s.heading_font
+  assign body_font = s.body_font
+  assign heading_font_bold = heading_font | font_modify: 'weight', 'bold'
+  assign body_font_bold = body_font | font_modify: 'weight', 'bold'
+
+  assign section_bg = s.background_color
+  if s.background_gradient != blank
+    assign section_bg = s.background_gradient
+  endif
+
+  assign card_alpha = s.card_opacity | divided_by: 100.0
+  assign card_bg = s.card_bg | color_modify: 'alpha', card_alpha
+
+  assign spot_alpha = s.spotlight_strength | divided_by: 100.0
+  assign spot_color = s.spotlight_color | color_modify: 'alpha', spot_alpha
+
+  assign effect_alpha = s.effect_strength | divided_by: 100.0
+  assign effect_color = s.effect_color | color_modify: 'alpha', effect_alpha
+
+  assign block_count = section.blocks.size
+
+  assign show_header = false
+  if s.eyebrow != blank or s.heading != blank or s.subheading != blank or s.show_summary
+    assign show_header = true
+  endif
+
+  assign two_rows = false
+  if s.layout == 'marquee' and s.marquee_rows == '2' and block_count > 1
+    assign two_rows = true
+  endif
+
+  assign star_path = 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z'
+-%}
+
+{%- comment -%} Build every card once, then place it in the chosen layout. {%- endcomment -%}
+{%- capture cards_all -%}{%- endcapture -%}
+{%- capture row_one -%}{%- endcapture -%}
+{%- capture row_two -%}{%- endcapture -%}
+{%- assign row_one_count = 0 -%}
+{%- assign row_two_count = 0 -%}
+
+{%- for block in section.blocks -%}
+  {%- liquid
+    assign b = block.settings
+    assign rating = b.rating
+    assign name_parts = b.name | strip | split: ' '
+    assign initials = ''
+    if name_parts.size > 0
+      assign initials = name_parts.first | slice: 0
+      if name_parts.size > 1
+        assign last_initial = name_parts.last | slice: 0
+        assign initials = initials | append: last_initial
+      endif
+      assign initials = initials | upcase
+    endif
+  -%}
+
+  {%- capture author_html -%}
+    {%- if b.name != blank or b.role != blank -%}
+      <div class="ts__author">
+        {%- if s.show_avatar -%}
+          {%- if b.image != blank -%}
+            {{
+              b.image
+              | image_url: width: 200
+              | image_tag: class: 'ts__avatar', loading: 'lazy', width: 100, height: 100, alt: b.name
+            }}
+          {%- elsif s.show_initials and initials != '' -%}
+            <span class="ts__avatar ts__avatar--initials" aria-hidden="true">{{ initials | escape }}</span>
+          {%- endif -%}
+        {%- endif -%}
+
+        <div class="ts__author-text">
+          {%- if b.name != blank -%}
+            <p class="ts__name">
+              {{- b.name | escape -}}
+              {%- if b.verified and s.verified_style == 'icon' -%}
+                <svg class="ts__verified-icon" viewBox="0 0 24 24" aria-label="{{ s.verified_text | escape }}" role="img" focusable="false"><path fill="currentColor" d="M12 1.5 14.6 3.4l3.2-.1 1 3 2.6 1.9-1 3.1 1 3.1-2.6 1.9-1 3-3.2-.1L12 22.5l-2.6-1.9-3.2.1-1-3-2.6-1.9 1-3.1-1-3.1 2.6-1.9 1-3 3.2.1z"/><path d="m8.5 12.2 2.3 2.3 4.7-4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {%- endif -%}
+            </p>
+          {%- endif -%}
+
+          {%- if b.role != blank or b.date != blank or b.verified and s.verified_style == 'text' -%}
+            <p class="ts__meta">
+              {%- if b.verified and s.verified_style == 'text' -%}
+                <span class="ts__verified">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>
+                  {{- s.verified_text | escape -}}
+                </span>
+              {%- endif -%}
+              {%- if b.role != blank -%}<span>{{ b.role | escape }}</span>{%- endif -%}
+              {%- if b.date != blank -%}<span>{{ b.date | escape }}</span>{%- endif -%}
+            </p>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endif -%}
+  {%- endcapture -%}
+
+  {%- capture card -%}
+    <div class="ts__item" role="listitem" style="--ts-i: {{ forloop.index }};" {{ block.shopify_attributes }}>
+      <div class="ts__card">
+        {%- if s.show_quote_icon -%}
+          <svg class="ts__quote-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9.6 5C5.9 6.3 3.5 9.4 3.5 13.5v5.2c0 .4.3.8.8.8h5.2c.4 0 .8-.3.8-.8v-5.2c0-.4-.3-.8-.8-.8H6.8c0-2.6 1.3-4.6 3.6-5.6.3-.1.5-.5.4-.8l-.3-.9c-.2-.4-.6-.6-.9-.4zm10 0c-3.7 1.3-6.1 4.4-6.1 8.5v5.2c0 .4.3.8.8.8h5.2c.4 0 .8-.3.8-.8v-5.2c0-.4-.3-.8-.8-.8h-2.7c0-2.6 1.3-4.6 3.6-5.6.3-.1.5-.5.4-.8l-.3-.9c-.2-.4-.6-.6-.9-.4z"/></svg>
+        {%- endif -%}
+
+        {%- if s.author_position == 'top' -%}{{ author_html }}{%- endif -%}
+
+        {%- if s.show_rating and rating > 0 -%}
+          <div class="ts__stars" role="img" aria-label="{{ rating }} / 5">
+            {%- for i in (1..5) -%}
+              <svg class="ts__star{% if i > rating %} is-empty{% endif %}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="{{ star_path }}"/></svg>
+            {%- endfor -%}
+          </div>
+        {%- endif -%}
+
+        {%- if b.title != blank -%}
+          <p class="ts__title">{{ b.title | escape }}</p>
+        {%- endif -%}
+
+        {%- if b.quote != blank -%}
+          <blockquote class="ts__quote">
+            <p class="ts__quote-text">{{ b.quote | escape | newline_to_br }}</p>
+          </blockquote>
+          {%- if s.line_clamp > 0 -%}
+            <button type="button" class="ts__more" hidden aria-expanded="false">{{ s.read_more_text | escape }}</button>
+          {%- endif -%}
+        {%- endif -%}
+
+        {%- if b.review_image != blank and s.show_review_images -%}
+          {{
+            b.review_image
+            | image_url: width: 800
+            | image_tag: class: 'ts__photo', loading: 'lazy', sizes: '(min-width: 990px) 400px, 90vw', widths: '300, 500, 800', alt: b.review_image.alt
+          }}
+        {%- endif -%}
+
+        {%- if b.product != blank and s.show_product -%}
+          <a href="{{ b.product.url }}" class="ts__product">
+            {%- if b.product.featured_image -%}
+              {{
+                b.product.featured_image
+                | image_url: width: 120
+                | image_tag: class: 'ts__product-img', loading: 'lazy', width: 60, height: 60, alt: ''
+              }}
+            {%- endif -%}
+            <span class="ts__product-text">
+              {%- if s.product_label != blank -%}<span class="ts__product-label">{{ s.product_label | escape }}</span>{%- endif -%}
+              <span class="ts__product-title">{{ b.product.title | escape }}</span>
+            </span>
+          </a>
+        {%- endif -%}
+
+        {%- if s.author_position == 'bottom' -%}{{ author_html }}{%- endif -%}
+      </div>
+    </div>
+  {%- endcapture -%}
+
+  {%- liquid
+    assign cards_all = cards_all | append: card
+    assign row_index = forloop.index | modulo: 2
+    if two_rows and row_index == 0
+      assign row_two = row_two | append: card
+      assign row_two_count = row_two_count | plus: 1
+    else
+      assign row_one = row_one | append: card
+      assign row_one_count = row_one_count | plus: 1
+    endif
+  -%}
+{%- endfor -%}
+
+{%- liquid
+  comment
+    Marquee: repeat each row enough times to always cover wide screens.
+  endcomment
+  assign card_span = s.marquee_card_width | plus: s.gap
+  assign row_one_width = row_one_count | times: card_span
+  assign row_two_width = row_two_count | times: card_span
+  assign copies_one = 2
+  assign copies_two = 2
+  if row_one_width > 0
+    assign copies_one = 2560 | divided_by: row_one_width | plus: 2
+  endif
+  if row_two_width > 0
+    assign copies_two = 2560 | divided_by: row_two_width | plus: 2
+  endif
+  if copies_one > 12
+    assign copies_one = 12
+  endif
+  if copies_two > 12
+    assign copies_two = 12
+  endif
+-%}
+
+<section
+  id="Testimonials-{{ section.id }}"
+  class="
+    ts
+    ts--layout-{{ s.layout }}
+    ts--style-{{ s.card_style }}
+    ts--align-{{ s.card_align }}
+    ts--shadow-{{ s.card_shadow }}
+    ts--hover-{{ s.hover_effect }}
+    ts--quote-{{ s.quote_icon_position }}
+    ts--avatar-{{ s.avatar_shape }}
+    ts--entrance-{{ s.entrance_animation }}
+    ts--highlight-{{ s.heading_highlight }}
+    ts--arrows-{{ s.arrows_position }}
+    {% if s.enable_spotlight %}ts--spotlight{% endif %}
+    {% if s.animate_border %}ts--spin{% endif %}
+    {% if s.marquee_pause %}ts--pause{% endif %}
+    {% if s.marquee_fade %}ts--fade{% endif %}
+    {% if s.full_width %}ts--full{% endif %}
+  "
+  data-layout="{{ s.layout }}"
+  data-entrance="{{ s.entrance_animation }}"
+  data-autoplay="{% if s.autoplay %}{{ s.autoplay_speed }}{% else %}0{% endif %}"
+  data-loop="{{ s.carousel_loop }}"
+  data-more="{{ s.read_more_text | escape }}"
+  data-less="{{ s.read_less_text | escape }}"
+  {% if s.heading != blank %}aria-label="{{ s.heading | strip_html | escape }}"{% endif %}
+>
+  {%- if s.background_effect != 'none' -%}
+    <div class="ts__bg ts__bg--{{ s.background_effect }}" aria-hidden="true"></div>
+  {%- endif -%}
+
+  <div class="ts__inner">
+    {%- if show_header -%}
+      <div class="ts__header ts__reveal">
+        {%- if s.eyebrow != blank -%}
+          <p class="ts__eyebrow">{{ s.eyebrow | escape }}</p>
+        {%- endif -%}
+
+        {%- if s.heading != blank -%}
+          <{{ s.heading_tag }} class="ts__heading">{{ s.heading }}</{{ s.heading_tag }}>
+        {%- endif -%}
+
+        {%- if s.subheading != blank -%}
+          <p class="ts__subheading">{{ s.subheading }}</p>
+        {%- endif -%}
+
+        {%- if s.show_summary -%}
+          <div class="ts__summary">
+            {%- if s.summary_rating != blank -%}
+              <span class="ts__summary-score">{{ s.summary_rating | escape }}</span>
+            {%- endif -%}
+            <span class="ts__stars ts__stars--summary" aria-hidden="true">
+              {%- for i in (1..5) -%}
+                <svg class="ts__star" viewBox="0 0 24 24" focusable="false"><path d="{{ star_path }}"/></svg>
+              {%- endfor -%}
+            </span>
+            {%- if s.summary_text != blank -%}
+              <span class="ts__summary-text">{{ s.summary_text | escape }}</span>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    {%- if block_count > 0 -%}
+      {%- case s.layout -%}
+        {%- when 'carousel' -%}
+          <div class="ts__carousel ts__reveal">
+            <div class="ts__track" role="list" tabindex="0" aria-label="{{ s.heading | default: 'Testimonials' | strip_html | escape }}">
+              {{ cards_all }}
+            </div>
+
+            {%- if s.arrows_position != 'none' or s.show_dots -%}
+              <div class="ts__nav">
+                {%- if s.arrows_position != 'none' -%}
+                  <button type="button" class="ts__arrow ts__arrow--prev" aria-label="{{ s.prev_label | escape }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                {%- endif -%}
+                {%- if s.show_dots -%}
+                  <div class="ts__dots"></div>
+                {%- endif -%}
+                {%- if s.arrows_position != 'none' -%}
+                  <button type="button" class="ts__arrow ts__arrow--next" aria-label="{{ s.next_label | escape }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                {%- endif -%}
+              </div>
+            {%- endif -%}
+          </div>
+
+        {%- when 'marquee' -%}
+          <div class="ts__marquee ts__reveal">
+            <div class="ts__marquee-row" role="list">
+              <div class="ts__marquee-track" style="--ts-shift: calc(-100% / {{ copies_one }});">
+                {%- for i in (1..copies_one) -%}
+                  <div class="ts__marquee-set"{% unless forloop.first %} aria-hidden="true" inert{% endunless %}>{{ row_one }}</div>
+                {%- endfor -%}
+              </div>
+            </div>
+
+            {%- if two_rows -%}
+              <div class="ts__marquee-row ts__marquee-row--reverse" role="list">
+                <div class="ts__marquee-track" style="--ts-shift: calc(-100% / {{ copies_two }});">
+                  {%- for i in (1..copies_two) -%}
+                    <div class="ts__marquee-set"{% unless forloop.first %} aria-hidden="true" inert{% endunless %}>{{ row_two }}</div>
+                  {%- endfor -%}
+                </div>
+              </div>
+            {%- endif -%}
+          </div>
+
+        {%- else -%}
+          <div class="ts__list ts__reveal" role="list">
+            {{ cards_all }}
+          </div>
+      {%- endcase -%}
+    {%- endif -%}
+  </div>
+</section>
+
+<style>
+  {{ heading_font | font_face: font_display: 'swap' }}
+  {% if heading_font_bold %}{{ heading_font_bold | font_face: font_display: 'swap' }}{% endif %}
+  {{ body_font | font_face: font_display: 'swap' }}
+  {% if body_font_bold %}{{ body_font_bold | font_face: font_display: 'swap' }}{% endif %}
+
+  @property --ts-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  /* ---------- Settings → CSS variables ---------- */
+  #Testimonials-{{ section.id }} {
+    --ts-bg: {{ section_bg }};
+    --ts-eyebrow: {{ s.eyebrow_color }};
+    --ts-heading: {{ s.heading_color }};
+    --ts-sub: {{ s.subheading_color }};
+    --ts-quote: {{ s.quote_color }};
+    --ts-title: {{ s.title_color }};
+    --ts-name: {{ s.name_color }};
+    --ts-meta: {{ s.meta_color }};
+    --ts-star: {{ s.star_color }};
+    --ts-star-empty: {{ s.star_empty_color }};
+    --ts-quote-icon: {{ s.quote_icon_color }};
+    --ts-card-bg: {{ card_bg }};
+    --ts-card-border: {{ s.card_border_color }};
+    --ts-avatar-bg: {{ s.avatar_bg }};
+    --ts-avatar-text: {{ s.avatar_text_color }};
+    --ts-verified: {{ s.verified_color }};
+    --ts-accent-1: {{ s.accent_1 }};
+    --ts-accent-2: {{ s.accent_2 }};
+    --ts-nav-bg: {{ s.nav_bg }};
+    --ts-nav-icon: {{ s.nav_icon_color }};
+    --ts-dot: {{ s.dot_color }};
+    --ts-dot-active: {{ s.dot_active_color }};
+    --ts-spot: {{ spot_color }};
+    --ts-effect: {{ effect_color }};
+
+    --ts-radius: {{ s.radius }}px;
+    --ts-border-width: {{ s.border_width }}px;
+    --ts-blur: {{ s.glass_blur }}px;
+    --ts-border-speed: {{ s.border_speed }}s;
+    --ts-max-width: {{ s.max_width }}px;
+    --ts-header-gap: {{ s.header_spacing }}px;
+    --ts-heading-weight: {{ s.heading_weight }};
+    --ts-heading-ls: {{ s.heading_letter_spacing }}px;
+    --ts-title-weight: {{ s.title_weight }};
+    --ts-name-weight: {{ s.name_weight }};
+    --ts-line-height: {{ s.line_height }};
+    --ts-avatar-size: {{ s.avatar_size }}px;
+    --ts-star-size: {{ s.star_size }}px;
+    --ts-quote-icon-size: {{ s.quote_icon_size }}px;
+    --ts-clamp: {{ s.line_clamp }};
+    --ts-speed: {{ s.marquee_speed }}s;
+    --ts-card-w: {{ s.marquee_card_width }}px;
+    --ts-stagger: {{ s.stagger }}ms;
+    --ts-content-gap: {{ s.content_gap }}px;
+
+    /* Desktop values (overridden for tablet / mobile) */
+    --ts-cols: {{ s.columns_desktop }};
+    --ts-per-view: {{ s.per_view_desktop }};
+    --ts-pt: {{ s.padding_top }}px;
+    --ts-pb: {{ s.padding_bottom }}px;
+    --ts-side: {{ s.side_padding }}px;
+    --ts-gap: {{ s.gap }}px;
+    --ts-card-pad: {{ s.card_padding }}px;
+    --ts-heading-size: {{ s.heading_size }}px;
+    --ts-sub-size: {{ s.subheading_size }}px;
+    --ts-quote-size: {{ s.quote_size }}px;
+    --ts-title-size: {{ s.title_size }}px;
+  }
+
+  /* ---------- Section ---------- */
+  #Testimonials-{{ section.id }} {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--ts-bg);
+    padding-top: var(--ts-pt);
+    padding-bottom: var(--ts-pb);
+    font-family: {{ body_font.family }}, {{ body_font.fallback_families }};
+    font-style: {{ body_font.style }};
+  }
+
+  #Testimonials-{{ section.id }} *,
+  #Testimonials-{{ section.id }} *::before,
+  #Testimonials-{{ section.id }} *::after {
+    box-sizing: border-box;
+  }
+
+  #Testimonials-{{ section.id }} .ts__inner {
+    position: relative;
+    z-index: 1;
+    max-width: var(--ts-max-width);
+    margin: 0 auto;
+    padding-left: var(--ts-side);
+    padding-right: var(--ts-side);
+  }
+
+  #Testimonials-{{ section.id }}.ts--full .ts__inner {
+    max-width: none;
+  }
+
+  #Testimonials-{{ section.id }}.ts--layout-marquee .ts__inner {
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #Testimonials-{{ section.id }}.ts--layout-marquee .ts__header {
+    max-width: var(--ts-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--ts-side);
+    padding-right: var(--ts-side);
+  }
+
+  /* ---------- Background effects ---------- */
+  #Testimonials-{{ section.id }} .ts__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #Testimonials-{{ section.id }} .ts__bg--grid {
+    background-image:
+      linear-gradient(var(--ts-effect) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ts-effect) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+
+  #Testimonials-{{ section.id }} .ts__bg--dots {
+    background-image: radial-gradient(var(--ts-effect) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+
+  #Testimonials-{{ section.id }} .ts__bg--glow {
+    background:
+      radial-gradient(40% 50% at 12% 15%, color-mix(in srgb, var(--ts-accent-1) 35%, transparent), transparent 70%),
+      radial-gradient(40% 50% at 88% 85%, color-mix(in srgb, var(--ts-accent-2) 30%, transparent), transparent 70%);
+    opacity: calc({{ s.effect_strength }} / 20);
+    filter: blur(20px);
+  }
+
+  /* ---------- Header ---------- */
+  #Testimonials-{{ section.id }} .ts__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: var(--ts-header-gap);
+    text-align: {{ s.heading_align }};
+    {% case s.heading_align %}
+      {% when 'center' %}align-items: center;
+      {% when 'right' %}align-items: flex-end;
+      {% else %}align-items: flex-start;
+    {% endcase %}
+  }
+
+  #Testimonials-{{ section.id }} .ts__eyebrow {
+    margin: 0;
+    color: var(--ts-eyebrow);
+    font-size: {{ s.eyebrow_size }}px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  #Testimonials-{{ section.id }} .ts__heading {
+    margin: 0;
+    max-width: 24ch;
+    color: var(--ts-heading);
+    font-family: {{ heading_font.family }}, {{ heading_font.fallback_families }};
+    font-style: {{ heading_font.style }};
+    font-size: var(--ts-heading-size);
+    font-weight: var(--ts-heading-weight);
+    letter-spacing: var(--ts-heading-ls);
+    line-height: 1.1;
+    text-transform: {{ s.heading_transform }};
+    text-wrap: balance;
+  }
+
+  #Testimonials-{{ section.id }}.ts--highlight-gradient .ts__heading em,
+  #Testimonials-{{ section.id }}.ts--highlight-gradient .ts__heading i {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--ts-accent-1), var(--ts-accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  #Testimonials-{{ section.id }}.ts--highlight-accent .ts__heading em,
+  #Testimonials-{{ section.id }}.ts--highlight-accent .ts__heading i {
+    font-style: normal;
+    color: var(--ts-accent-1);
+  }
+
+  #Testimonials-{{ section.id }} .ts__subheading {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--ts-sub);
+    font-size: var(--ts-sub-size);
+    line-height: 1.5;
+  }
+
+  #Testimonials-{{ section.id }} .ts__summary {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 10px;
+    margin-top: 4px;
+    padding: 8px 16px;
+    border: 1px solid var(--ts-card-border);
+    border-radius: 999px;
+    background: var(--ts-card-bg);
+    color: var(--ts-meta);
+    font-size: 14px;
+  }
+
+  #Testimonials-{{ section.id }} .ts__summary-score {
+    color: var(--ts-name);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  #Testimonials-{{ section.id }} .ts__stars--summary {
+    --ts-star-size: 16px;
+  }
+
+  /* ---------- Layout: grid ---------- */
+  #Testimonials-{{ section.id }}.ts--layout-grid .ts__list {
+    display: grid;
+    grid-template-columns: repeat(var(--ts-cols), minmax(0, 1fr));
+    gap: var(--ts-gap);
+  }
+
+  /* ---------- Layout: masonry ---------- */
+  #Testimonials-{{ section.id }}.ts--layout-masonry .ts__list {
+    column-count: var(--ts-cols);
+    column-gap: var(--ts-gap);
+  }
+
+  #Testimonials-{{ section.id }}.ts--layout-masonry .ts__item {
+    break-inside: avoid;
+    margin-bottom: var(--ts-gap);
+  }
+
+  /* ---------- Layout: carousel ---------- */
+  #Testimonials-{{ section.id }} .ts__carousel {
+    position: relative;
+  }
+
+  #Testimonials-{{ section.id }} .ts__track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--ts-per-view) - 1) * var(--ts-gap)) / var(--ts-per-view));
+    gap: var(--ts-gap);
+    margin: -16px 0;
+    padding: 16px 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    outline: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #Testimonials-{{ section.id }} .ts__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  #Testimonials-{{ section.id }} .ts__track:focus-visible {
+    outline: 2px solid var(--ts-accent-1);
+    outline-offset: -2px;
+  }
+
+  #Testimonials-{{ section.id }} .ts__track .ts__item {
+    scroll-snap-align: start;
+  }
+
+  #Testimonials-{{ section.id }} .ts__nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 28px;
+  }
+
+  #Testimonials-{{ section.id }} .ts__arrow {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: {{ s.arrow_size }}px;
+    height: {{ s.arrow_size }}px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--ts-card-border);
+    border-radius: 50%;
+    background: var(--ts-nav-bg);
+    color: var(--ts-nav-icon);
+    cursor: pointer;
+    transition: transform 0.25s ease, opacity 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+  }
+
+  #Testimonials-{{ section.id }} .ts__arrow svg {
+    width: 45%;
+    height: 45%;
+  }
+
+  #Testimonials-{{ section.id }} .ts__arrow:hover:not(:disabled) {
+    border-color: var(--ts-accent-1);
+    transform: scale(1.06);
+  }
+
+  #Testimonials-{{ section.id }} .ts__arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  #Testimonials-{{ section.id }} .ts__arrow:focus-visible,
+  #Testimonials-{{ section.id }} .ts__dot:focus-visible,
+  #Testimonials-{{ section.id }} .ts__more:focus-visible,
+  #Testimonials-{{ section.id }} .ts__product:focus-visible {
+    outline: 2px solid var(--ts-accent-1);
+    outline-offset: 2px;
+  }
+
+  @media screen and (min-width: 990px) {
+    #Testimonials-{{ section.id }}.ts--arrows-sides .ts__arrow {
+      position: absolute;
+      top: 50%;
+      z-index: 3;
+      transform: translateY(-50%);
+      box-shadow: 0 8px 24px rgba(16, 16, 32, 0.12);
+    }
+
+    #Testimonials-{{ section.id }}.ts--arrows-sides .ts__arrow:hover:not(:disabled) {
+      transform: translateY(-50%) scale(1.06);
+    }
+
+    #Testimonials-{{ section.id }}.ts--arrows-sides .ts__arrow--prev {
+      left: calc({{ s.arrow_size }}px / -2);
+    }
+
+    #Testimonials-{{ section.id }}.ts--arrows-sides .ts__arrow--next {
+      right: calc({{ s.arrow_size }}px / -2);
+    }
+
+    #Testimonials-{{ section.id }}.ts--arrows-sides .ts__arrow:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  #Testimonials-{{ section.id }} .ts__nav[hidden],
+  #Testimonials-{{ section.id }} .ts__dots[hidden] {
+    display: none;
+  }
+
+  #Testimonials-{{ section.id }} .ts__dots {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #Testimonials-{{ section.id }} .ts__dot {
+    width: 8px;
+    height: 8px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ts-dot);
+    cursor: pointer;
+    transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.35s ease;
+  }
+
+  #Testimonials-{{ section.id }} .ts__dot.is-active {
+    width: 26px;
+    background: var(--ts-dot-active);
+  }
+
+  /* ---------- Layout: marquee ---------- */
+  #Testimonials-{{ section.id }} .ts__marquee {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ts-gap);
+  }
+
+  #Testimonials-{{ section.id }}.ts--fade .ts__marquee {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 {{ s.marquee_fade_width }}%, #000 {{ 100 | minus: s.marquee_fade_width }}%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 {{ s.marquee_fade_width }}%, #000 {{ 100 | minus: s.marquee_fade_width }}%, transparent);
+  }
+
+  #Testimonials-{{ section.id }} .ts__marquee-row {
+    overflow: hidden;
+    padding: 12px 0;
+    margin: -12px 0;
+  }
+
+  #Testimonials-{{ section.id }} .ts__marquee-track {
+    display: flex;
+    width: max-content;
+    animation: ts-marquee var(--ts-speed) linear infinite;
+    will-change: transform;
+  }
+
+  #Testimonials-{{ section.id }} .ts__marquee-row--reverse .ts__marquee-track {
+    animation-direction: reverse;
+  }
+
+  {% if s.marquee_direction == 'right' %}
+    #Testimonials-{{ section.id }} .ts__marquee-track {
+      animation-direction: reverse;
+    }
+
+    #Testimonials-{{ section.id }} .ts__marquee-row--reverse .ts__marquee-track {
+      animation-direction: normal;
+    }
+  {% endif %}
+
+  #Testimonials-{{ section.id }}.ts--pause .ts__marquee-row:hover .ts__marquee-track,
+  #Testimonials-{{ section.id }}.ts--pause .ts__marquee-row:focus-within .ts__marquee-track {
+    animation-play-state: paused;
+  }
+
+  #Testimonials-{{ section.id }} .ts__marquee-set {
+    display: flex;
+    align-items: stretch;
+  }
+
+  #Testimonials-{{ section.id }} .ts__marquee-set .ts__item {
+    flex: 0 0 var(--ts-card-w);
+    width: var(--ts-card-w);
+    margin-right: var(--ts-gap);
+  }
+
+  @keyframes ts-marquee {
+    to { transform: translate3d(var(--ts-shift), 0, 0); }
+  }
+
+  /* ---------- Card ---------- */
+  #Testimonials-{{ section.id }} .ts__item {
+    display: flex;
+    min-width: 0;
+  }
+
+  #Testimonials-{{ section.id }} .ts__card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ts-content-gap);
+    width: 100%;
+    margin: 0;
+    padding: var(--ts-card-pad);
+    border-radius: var(--ts-radius);
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 0.3s ease;
+  }
+
+  #Testimonials-{{ section.id }}.ts--align-center .ts__card {
+    align-items: center;
+    text-align: center;
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-solid .ts__card {
+    background: var(--ts-card-bg);
+    border: var(--ts-border-width) solid var(--ts-card-border);
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-outline .ts__card {
+    background: transparent;
+    border: max(var(--ts-border-width), 1px) solid var(--ts-card-border);
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-glass .ts__card {
+    background: var(--ts-card-bg);
+    border: var(--ts-border-width) solid var(--ts-card-border);
+    -webkit-backdrop-filter: blur(var(--ts-blur)) saturate(140%);
+    backdrop-filter: blur(var(--ts-blur)) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-gradient .ts__card {
+    background: var(--ts-card-bg);
+    border: 0;
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-gradient .ts__card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: max(var(--ts-border-width), 1px);
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--ts-angle),
+      var(--ts-accent-1),
+      var(--ts-accent-2),
+      color-mix(in srgb, var(--ts-accent-1) 15%, transparent),
+      var(--ts-accent-1)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-gradient.ts--spin .ts__card::before {
+    animation: ts-border-spin var(--ts-border-speed) linear infinite;
+  }
+
+  @keyframes ts-border-spin {
+    to { --ts-angle: 360deg; }
+  }
+
+  #Testimonials-{{ section.id }}.ts--style-minimal .ts__card {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none !important;
+  }
+
+  /* Shadows */
+  #Testimonials-{{ section.id }}.ts--shadow-soft .ts__card {
+    box-shadow: 0 1px 2px rgba(16, 16, 32, 0.04), 0 8px 24px rgba(16, 16, 32, 0.06);
+  }
+
+  #Testimonials-{{ section.id }}.ts--shadow-medium .ts__card {
+    box-shadow: 0 2px 6px rgba(16, 16, 32, 0.06), 0 16px 40px rgba(16, 16, 32, 0.10);
+  }
+
+  #Testimonials-{{ section.id }}.ts--shadow-glow .ts__card {
+    box-shadow: 0 10px 40px color-mix(in srgb, var(--ts-accent-1) 24%, transparent);
+  }
+
+  /* Spotlight */
+  #Testimonials-{{ section.id }}.ts--spotlight .ts__card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      300px circle at var(--ts-mx, 50%) var(--ts-my, 50%),
+      var(--ts-spot),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
+  #Testimonials-{{ section.id }}.ts--spotlight .ts__card:hover::after {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    #Testimonials-{{ section.id }}.ts--hover-lift .ts__card:hover {
+      transform: translateY(-6px);
+    }
+
+    #Testimonials-{{ section.id }}.ts--hover-lift:not(.ts--style-minimal) .ts__card:hover {
+      box-shadow: 0 4px 10px rgba(16, 16, 32, 0.06), 0 24px 50px rgba(16, 16, 32, 0.14);
+    }
+
+    #Testimonials-{{ section.id }}.ts--hover-glow:not(.ts--style-minimal) .ts__card:hover {
+      box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--ts-accent-1) 40%, transparent),
+        0 14px 44px color-mix(in srgb, var(--ts-accent-1) 30%, transparent);
+    }
+
+    #Testimonials-{{ section.id }}.ts--hover-border .ts__card:hover {
+      border-color: var(--ts-accent-1);
+    }
+  }
+
+  /* Quote icon */
+  #Testimonials-{{ section.id }} .ts__quote-icon {
+    flex-shrink: 0;
+    width: var(--ts-quote-icon-size);
+    height: var(--ts-quote-icon-size);
+    color: var(--ts-quote-icon);
+  }
+
+  #Testimonials-{{ section.id }}.ts--quote-watermark .ts__quote-icon {
+    position: absolute;
+    top: calc(var(--ts-card-pad) * 0.6);
+    right: calc(var(--ts-card-pad) * 0.6);
+    z-index: 0;
+    width: calc(var(--ts-quote-icon-size) * 2.4);
+    height: calc(var(--ts-quote-icon-size) * 2.4);
+    opacity: 0.14;
+  }
+
+  #Testimonials-{{ section.id }}.ts--quote-watermark.ts--align-center .ts__quote-icon {
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  #Testimonials-{{ section.id }} .ts__card > :not(.ts__quote-icon) {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Stars */
+  #Testimonials-{{ section.id }} .ts__stars {
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  #Testimonials-{{ section.id }} .ts__star {
+    width: var(--ts-star-size);
+    height: var(--ts-star-size);
+    fill: var(--ts-star);
+  }
+
+  #Testimonials-{{ section.id }} .ts__star.is-empty {
+    fill: var(--ts-star-empty);
+  }
+
+  /* Text */
+  #Testimonials-{{ section.id }} .ts__title {
+    margin: 0;
+    color: var(--ts-title);
+    font-size: var(--ts-title-size);
+    font-weight: var(--ts-title-weight);
+    line-height: 1.3;
+  }
+
+  #Testimonials-{{ section.id }} .ts__quote {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    flex: 1 1 auto;
+  }
+
+  #Testimonials-{{ section.id }} .ts__quote-text {
+    margin: 0;
+    color: var(--ts-quote);
+    font-size: var(--ts-quote-size);
+    {% if s.quote_italic %}font-style: italic;{% endif %}
+    line-height: var(--ts-line-height);
+  }
+
+  {% if s.line_clamp > 0 %}
+    #Testimonials-{{ section.id }} .ts__quote-text {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: var(--ts-clamp);
+    }
+
+    #Testimonials-{{ section.id }} .ts__card.is-expanded .ts__quote-text {
+      display: block;
+      -webkit-line-clamp: unset;
+    }
+  {% endif %}
+
+  #Testimonials-{{ section.id }} .ts__more {
+    align-self: flex-start;
+    margin: calc(var(--ts-content-gap) * -0.6) 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ts-accent-1);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #Testimonials-{{ section.id }}.ts--align-center .ts__more {
+    align-self: center;
+  }
+
+  #Testimonials-{{ section.id }} .ts__more[hidden] {
+    display: none;
+  }
+
+  /* Review photo */
+  #Testimonials-{{ section.id }} .ts__photo {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: {{ s.photo_ratio }};
+    object-fit: cover;
+    border-radius: calc(var(--ts-radius) * 0.6);
+  }
+
+  /* Product chip */
+  #Testimonials-{{ section.id }} .ts__product {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    padding: 6px 14px 6px 6px;
+    border: 1px solid var(--ts-card-border);
+    border-radius: 12px;
+    color: var(--ts-name);
+    text-align: left;
+    text-decoration: none;
+    transition: border-color 0.25s ease;
+  }
+
+  #Testimonials-{{ section.id }} .ts__product:hover {
+    border-color: var(--ts-accent-1);
+  }
+
+  #Testimonials-{{ section.id }} .ts__product-img {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  #Testimonials-{{ section.id }} .ts__product-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  #Testimonials-{{ section.id }} .ts__product-label {
+    color: var(--ts-meta);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  #Testimonials-{{ section.id }} .ts__product-title {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Author */
+  #Testimonials-{{ section.id }} .ts__author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+  }
+
+  #Testimonials-{{ section.id }}.ts--align-center .ts__author {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  #Testimonials-{{ section.id }} .ts__avatar {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--ts-avatar-size);
+    height: var(--ts-avatar-size);
+    object-fit: cover;
+    background: var(--ts-avatar-bg);
+    color: var(--ts-avatar-text);
+    font-size: calc(var(--ts-avatar-size) * 0.38);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  #Testimonials-{{ section.id }}.ts--avatar-circle .ts__avatar { border-radius: 50%; }
+  #Testimonials-{{ section.id }}.ts--avatar-rounded .ts__avatar { border-radius: calc(var(--ts-avatar-size) * 0.28); }
+  #Testimonials-{{ section.id }}.ts--avatar-square .ts__avatar { border-radius: 4px; }
+
+  #Testimonials-{{ section.id }} .ts__avatar--initials {
+    {% if s.avatar_gradient %}
+      background: linear-gradient(135deg, var(--ts-accent-1), var(--ts-accent-2));
+    {% endif %}
+  }
+
+  #Testimonials-{{ section.id }} .ts__author-text {
+    min-width: 0;
+  }
+
+  #Testimonials-{{ section.id }} .ts__name {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    color: var(--ts-name);
+    font-size: {{ s.name_size }}px;
+    font-weight: var(--ts-name-weight);
+    line-height: 1.3;
+  }
+
+  #Testimonials-{{ section.id }} .ts__verified-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--ts-verified);
+  }
+
+  #Testimonials-{{ section.id }} .ts__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 8px;
+    margin: 2px 0 0;
+    color: var(--ts-meta);
+    font-size: {{ s.meta_size }}px;
+    line-height: 1.4;
+  }
+
+  #Testimonials-{{ section.id }}.ts--align-center .ts__meta {
+    justify-content: center;
+  }
+
+  #Testimonials-{{ section.id }} .ts__meta > span + span::before {
+    content: '·';
+    margin-right: 8px;
+    opacity: 0.7;
+  }
+
+  #Testimonials-{{ section.id }} .ts__verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ts-verified);
+    font-weight: 600;
+  }
+
+  #Testimonials-{{ section.id }} .ts__verified svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* ---------- Entrance animation ---------- */
+  #Testimonials-{{ section.id }}.ts--js .ts__header,
+  #Testimonials-{{ section.id }}.ts--js .ts__marquee,
+  #Testimonials-{{ section.id }}.ts--js .ts__list .ts__item,
+  #Testimonials-{{ section.id }}.ts--js .ts__track .ts__item {
+    opacity: 0;
+    transition:
+      opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      filter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #Testimonials-{{ section.id }}.ts--js .ts__list .ts__item,
+  #Testimonials-{{ section.id }}.ts--js .ts__track .ts__item {
+    transition-delay: calc(min(var(--ts-i, 0), 8) * var(--ts-stagger));
+  }
+
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-fade_up .ts__header,
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-fade_up .ts__marquee,
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-fade_up .ts__list .ts__item,
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-fade_up .ts__track .ts__item {
+    transform: translateY(28px);
+  }
+
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-blur .ts__header,
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-blur .ts__marquee,
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-blur .ts__list .ts__item,
+  #Testimonials-{{ section.id }}.ts--js.ts--entrance-blur .ts__track .ts__item {
+    filter: blur(10px);
+    transform: translateY(12px);
+  }
+
+  #Testimonials-{{ section.id }}.ts--js .ts__header.is-visible,
+  #Testimonials-{{ section.id }}.ts--js .ts__marquee.is-visible,
+  #Testimonials-{{ section.id }}.ts--js .ts__list.is-visible .ts__item,
+  #Testimonials-{{ section.id }}.ts--js .ts__carousel.is-visible .ts__item {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  #Testimonials-{{ section.id }}.ts--js .is-done .ts__item {
+    transition: none;
+  }
+
+  /* ---------- Tablet ---------- */
+  @media screen and (min-width: 750px) and (max-width: 989px) {
+    #Testimonials-{{ section.id }} {
+      --ts-cols: {{ s.columns_tablet }};
+      --ts-per-view: {{ s.per_view_tablet }};
+    }
+  }
+
+  /* ---------- Mobile ---------- */
+  @media screen and (max-width: 749px) {
+    #Testimonials-{{ section.id }} {
+      --ts-cols: {{ s.columns_mobile }};
+      --ts-per-view: {{ s.per_view_mobile }};
+      --ts-pt: {{ s.padding_top_mobile }}px;
+      --ts-pb: {{ s.padding_bottom_mobile }}px;
+      --ts-side: {{ s.side_padding_mobile }}px;
+      --ts-gap: {{ s.gap_mobile }}px;
+      --ts-card-pad: {{ s.card_padding_mobile }}px;
+      --ts-heading-size: {{ s.heading_size_mobile }}px;
+      --ts-sub-size: {{ s.subheading_size_mobile }}px;
+      --ts-quote-size: {{ s.quote_size_mobile }}px;
+      --ts-title-size: {{ s.title_size_mobile }}px;
+      --ts-card-w: {{ s.marquee_card_width_mobile }}px;
+      --ts-header-gap: calc({{ s.header_spacing }}px * 0.75);
+    }
+
+    #Testimonials-{{ section.id }} .ts__nav {
+      margin-top: 20px;
+    }
+
+    #Testimonials-{{ section.id }} .ts__track {
+      margin-left: calc(var(--ts-side) * -1);
+      margin-right: calc(var(--ts-side) * -1);
+      padding-left: var(--ts-side);
+      padding-right: var(--ts-side);
+      scroll-padding-left: var(--ts-side);
+    }
+  }
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    #Testimonials-{{ section.id }} *,
+    #Testimonials-{{ section.id }} *::before,
+    #Testimonials-{{ section.id }} *::after {
+      animation: none !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    #Testimonials-{{ section.id }} .ts__marquee-row {
+      overflow-x: auto;
+    }
+
+    #Testimonials-{{ section.id }} .ts__marquee-set:not(:first-child) {
+      display: none;
+    }
+
+    #Testimonials-{{ section.id }} .ts__track {
+      scroll-behavior: auto;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    var root = document.getElementById('Testimonials-{{ section.id }}');
+
+    if (!root) {
+      return;
+    }
+
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var inEditor = window.Shopify && window.Shopify.designMode;
+
+    /* ---------- Read more ---------- */
+    var moreText = root.getAttribute('data-more') || 'Read more';
+    var lessText = root.getAttribute('data-less') || 'Read less';
+
+    function checkClamps() {
+      root.querySelectorAll('.ts__card').forEach(function (card) {
+        var text = card.querySelector('.ts__quote-text');
+        var button = card.querySelector('.ts__more');
+        if (!text || !button || card.classList.contains('is-expanded')) {
+          return;
+        }
+        button.hidden = text.scrollHeight <= text.clientHeight + 2;
+      });
+    }
+
+    root.querySelectorAll('.ts__more').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var card = button.closest('.ts__card');
+        var expanded = card.classList.toggle('is-expanded');
+        button.textContent = expanded ? lessText : moreText;
+        button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      });
+    });
+
+    checkClamps();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(checkClamps);
+    }
+
+    /* ---------- Carousel ---------- */
+    var track = root.querySelector('.ts__track');
+    var autoplayTimer = null;
+
+    if (track) {
+      var items = Array.prototype.slice.call(track.querySelectorAll('.ts__item'));
+      var prev = root.querySelector('.ts__arrow--prev');
+      var next = root.querySelector('.ts__arrow--next');
+      var dotsWrap = root.querySelector('.ts__dots');
+      var loop = root.getAttribute('data-loop') === 'true';
+      var autoplayDelay = parseFloat(root.getAttribute('data-autoplay')) || 0;
+      var paused = false;
+      var dots = [];
+
+      function stepSize() {
+        if (items.length > 1) {
+          return items[1].offsetLeft - items[0].offsetLeft;
+        }
+        return track.clientWidth;
+      }
+
+      function maxScroll() {
+        return Math.max(0, track.scrollWidth - track.clientWidth);
+      }
+
+      function pageCount() {
+        var step = stepSize();
+        return step > 0 ? Math.round(maxScroll() / step) + 1 : 1;
+      }
+
+      function currentIndex() {
+        var step = stepSize();
+        if (track.scrollLeft >= maxScroll() - 4) {
+          return pageCount() - 1;
+        }
+        return step > 0 ? Math.round(track.scrollLeft / step) : 0;
+      }
+
+      function goTo(index) {
+        var pages = pageCount();
+        if (index < 0) {
+          index = loop ? pages - 1 : 0;
+        }
+        if (index > pages - 1) {
+          index = loop ? 0 : pages - 1;
+        }
+        track.scrollTo({
+          left: Math.min(index * stepSize(), maxScroll()),
+          behavior: reducedMotion ? 'auto' : 'smooth'
+        });
+      }
+
+      function buildDots() {
+        if (!dotsWrap) {
+          return;
+        }
+        var pages = pageCount();
+        dotsWrap.innerHTML = '';
+        dots = [];
+        dotsWrap.hidden = pages <= 1;
+        for (var i = 0; i < pages; i++) {
+          var dot = document.createElement('button');
+          dot.type = 'button';
+          dot.className = 'ts__dot';
+          dot.setAttribute('aria-label', (i + 1) + ' / ' + pages);
+          (function (target) {
+            dot.addEventListener('click', function () {
+              goTo(target);
+            });
+          })(i);
+          dotsWrap.appendChild(dot);
+          dots.push(dot);
+        }
+      }
+
+      function update() {
+        var index = currentIndex();
+        var pages = pageCount();
+        dots.forEach(function (dot, i) {
+          dot.classList.toggle('is-active', i === index);
+          dot.setAttribute('aria-current', i === index ? 'true' : 'false');
+        });
+        if (prev) {
+          prev.disabled = !loop && index <= 0;
+        }
+        if (next) {
+          next.disabled = !loop && index >= pages - 1;
+        }
+        var nav = root.querySelector('.ts__nav');
+        if (nav) {
+          nav.hidden = pages <= 1;
+        }
+      }
+
+      var ticking = false;
+      track.addEventListener('scroll', function () {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(function () {
+            update();
+            ticking = false;
+          });
+        }
+      }, { passive: true });
+
+      if (prev) {
+        prev.addEventListener('click', function () {
+          goTo(currentIndex() - 1);
+        });
+      }
+
+      if (next) {
+        next.addEventListener('click', function () {
+          goTo(currentIndex() + 1);
+        });
+      }
+
+      track.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          goTo(currentIndex() + 1);
+        } else if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          goTo(currentIndex() - 1);
+        }
+      });
+
+      function startAutoplay() {
+        clearInterval(autoplayTimer);
+        if (!autoplayDelay || reducedMotion) {
+          return;
+        }
+        autoplayTimer = setInterval(function () {
+          if (paused || document.hidden) {
+            return;
+          }
+          var index = currentIndex();
+          var pages = pageCount();
+          goTo(index >= pages - 1 ? 0 : index + 1);
+        }, autoplayDelay * 1000);
+      }
+
+      ['mouseenter', 'focusin', 'touchstart'].forEach(function (type) {
+        root.addEventListener(type, function () {
+          paused = true;
+        }, { passive: true });
+      });
+
+      ['mouseleave', 'focusout'].forEach(function (type) {
+        root.addEventListener(type, function () {
+          paused = false;
+        });
+      });
+
+      buildDots();
+      update();
+      startAutoplay();
+
+      var resizeTimer;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          buildDots();
+          update();
+          checkClamps();
+        }, 150);
+      }, { passive: true });
+
+      /* Theme editor: scroll to the testimonial selected in the sidebar */
+      document.addEventListener('shopify:block:select', function (event) {
+        var index = items.indexOf(event.target);
+        if (index !== -1) {
+          paused = true;
+          track.scrollTo({ left: Math.min(items[index].offsetLeft - items[0].offsetLeft, maxScroll()) });
+        }
+      });
+
+      document.addEventListener('shopify:block:deselect', function () {
+        paused = false;
+      });
+    } else {
+      window.addEventListener('resize', function () {
+        clearTimeout(root._tsResize);
+        root._tsResize = setTimeout(checkClamps, 150);
+      }, { passive: true });
+    }
+
+    /* ---------- Cursor spotlight ---------- */
+    if (root.classList.contains('ts--spotlight') && window.matchMedia('(hover: hover)').matches) {
+      root.addEventListener('pointermove', function (event) {
+        var card = event.target.closest && event.target.closest('.ts__card');
+        if (!card || !root.contains(card)) {
+          return;
+        }
+        var rect = card.getBoundingClientRect();
+        card.style.setProperty('--ts-mx', event.clientX - rect.left + 'px');
+        card.style.setProperty('--ts-my', event.clientY - rect.top + 'px');
+      }, { passive: true });
+    }
+
+    /* ---------- Entrance animation ---------- */
+    var entrance = root.getAttribute('data-entrance');
+
+    if (entrance && entrance !== 'none' && !reducedMotion && !inEditor && 'IntersectionObserver' in window) {
+      root.classList.add('ts--js');
+
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) {
+            return;
+          }
+          var el = entry.target;
+          el.classList.add('is-visible');
+          observer.unobserve(el);
+          setTimeout(function () {
+            el.classList.add('is-done');
+          }, 1600);
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+      root.querySelectorAll('.ts__reveal').forEach(function (el) {
+        observer.observe(el);
+      });
+    }
+
+    document.addEventListener('shopify:section:unload', function (event) {
+      if (event.target.contains(root)) {
+        clearInterval(autoplayTimer);
+      }
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Testimonials",
+  "tag": "div",
+  "class": "testimonials-section",
+  "max_blocks": 30,
+
+  "settings": [
+
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "options": [
+        { "value": "grid", "label": "Grid" },
+        { "value": "carousel", "label": "Carousel / slider" },
+        { "value": "masonry", "label": "Masonry (Pinterest style)" },
+        { "value": "marquee", "label": "Scrolling wall (marquee)" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "label": "Columns on desktop (Grid / Masonry)",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "columns_tablet",
+      "label": "Columns on tablet (Grid / Masonry)",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "columns_mobile",
+      "label": "Columns on mobile (Grid / Masonry)",
+      "min": 1,
+      "max": 2,
+      "step": 1,
+      "default": 1
+    },
+
+    {
+      "type": "header",
+      "content": "Carousel"
+    },
+    {
+      "type": "range",
+      "id": "per_view_desktop",
+      "label": "Cards visible on desktop",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "per_view_tablet",
+      "label": "Cards visible on tablet",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "type": "select",
+      "id": "per_view_mobile",
+      "label": "Cards visible on mobile",
+      "options": [
+        { "value": "1", "label": "1" },
+        { "value": "1.15", "label": "1 + peek of next card" },
+        { "value": "1.5", "label": "1.5" },
+        { "value": "2", "label": "2" }
+      ],
+      "default": "1.15"
+    },
+    {
+      "type": "select",
+      "id": "arrows_position",
+      "label": "Arrows",
+      "options": [
+        { "value": "bottom", "label": "Below the cards" },
+        { "value": "sides", "label": "On the sides (desktop)" },
+        { "value": "none", "label": "Hidden" }
+      ],
+      "default": "bottom"
+    },
+    {
+      "type": "range",
+      "id": "arrow_size",
+      "label": "Arrow button size",
+      "min": 32,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 44
+    },
+    {
+      "type": "checkbox",
+      "id": "show_dots",
+      "label": "Show dots",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "carousel_loop",
+      "label": "Loop back to the start",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "label": "Autoplay",
+      "info": "Pauses on hover and touch.",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "autoplay_speed",
+      "label": "Autoplay delay",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "unit": "s",
+      "default": 5
+    },
+    {
+      "type": "text",
+      "id": "prev_label",
+      "label": "Previous button label (screen readers)",
+      "default": "Previous"
+    },
+    {
+      "type": "text",
+      "id": "next_label",
+      "label": "Next button label (screen readers)",
+      "default": "Next"
+    },
+
+    {
+      "type": "header",
+      "content": "Scrolling wall (marquee)"
+    },
+    {
+      "type": "select",
+      "id": "marquee_rows",
+      "label": "Rows",
+      "options": [
+        { "value": "1", "label": "1 row" },
+        { "value": "2", "label": "2 rows (opposite directions)" }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "select",
+      "id": "marquee_direction",
+      "label": "Direction",
+      "options": [
+        { "value": "left", "label": "Right to left" },
+        { "value": "right", "label": "Left to right" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "range",
+      "id": "marquee_speed",
+      "label": "Time for one full loop",
+      "info": "Higher is slower.",
+      "min": 20,
+      "max": 200,
+      "step": 5,
+      "unit": "s",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "marquee_card_width",
+      "label": "Desktop card width",
+      "min": 240,
+      "max": 520,
+      "step": 10,
+      "unit": "px",
+      "default": 360
+    },
+    {
+      "type": "range",
+      "id": "marquee_card_width_mobile",
+      "label": "Mobile card width",
+      "min": 200,
+      "max": 360,
+      "step": 10,
+      "unit": "px",
+      "default": 280
+    },
+    {
+      "type": "checkbox",
+      "id": "marquee_pause",
+      "label": "Pause on hover",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "marquee_fade",
+      "label": "Fade the edges",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "marquee_fade_width",
+      "label": "Edge fade width",
+      "min": 2,
+      "max": 20,
+      "step": 1,
+      "unit": "%",
+      "default": 8
+    },
+
+    {
+      "type": "header",
+      "content": "Section heading"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Small text above heading",
+      "default": "Reviews"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "info": "Make a word italic to highlight it.",
+      "default": "Loved by <em>thousands</em> of customers"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Real words from real people who shop with us."
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Heading tag (SEO)",
+      "options": [
+        { "value": "h2", "label": "H2" },
+        { "value": "h3", "label": "H3" },
+        { "value": "p", "label": "Paragraph" }
+      ],
+      "default": "h2"
+    },
+    {
+      "type": "select",
+      "id": "heading_align",
+      "label": "Heading alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "heading_highlight",
+      "label": "Highlight style for italic words",
+      "options": [
+        { "value": "gradient", "label": "Gradient text" },
+        { "value": "accent", "label": "Accent color" },
+        { "value": "none", "label": "Keep italic" }
+      ],
+      "default": "gradient"
+    },
+    {
+      "type": "range",
+      "id": "header_spacing",
+      "label": "Space below heading",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 44
+    },
+    {
+      "type": "checkbox",
+      "id": "show_summary",
+      "label": "Show rating summary",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "summary_rating",
+      "label": "Average rating",
+      "default": "4.9"
+    },
+    {
+      "type": "text",
+      "id": "summary_text",
+      "label": "Summary text",
+      "default": "from 2,000+ happy customers"
+    },
+
+    {
+      "type": "header",
+      "content": "Card content"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_rating",
+      "label": "Show star rating",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_quote_icon",
+      "label": "Show quote icon",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "quote_icon_position",
+      "label": "Quote icon position",
+      "options": [
+        { "value": "inline", "label": "Top of card" },
+        { "value": "watermark", "label": "Large watermark" }
+      ],
+      "default": "watermark"
+    },
+    {
+      "type": "select",
+      "id": "author_position",
+      "label": "Customer details position",
+      "options": [
+        { "value": "bottom", "label": "Bottom of card" },
+        { "value": "top", "label": "Top of card" }
+      ],
+      "default": "bottom"
+    },
+    {
+      "type": "select",
+      "id": "card_align",
+      "label": "Card alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" }
+      ],
+      "default": "left"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_avatar",
+      "label": "Show customer photo",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_initials",
+      "label": "Show initials when there is no photo",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "verified_style",
+      "label": "Verified badge style",
+      "options": [
+        { "value": "text", "label": "Check + text" },
+        { "value": "icon", "label": "Badge icon next to name" }
+      ],
+      "default": "text"
+    },
+    {
+      "type": "text",
+      "id": "verified_text",
+      "label": "Verified badge text",
+      "default": "Verified buyer"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_product",
+      "label": "Show purchased product",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "product_label",
+      "label": "Purchased product label",
+      "default": "Purchased"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_review_images",
+      "label": "Show review photos",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "photo_ratio",
+      "label": "Review photo shape",
+      "options": [
+        { "value": "4 / 3", "label": "Landscape (4:3)" },
+        { "value": "1 / 1", "label": "Square" },
+        { "value": "4 / 5", "label": "Portrait (4:5)" },
+        { "value": "16 / 9", "label": "Wide (16:9)" }
+      ],
+      "default": "4 / 3"
+    },
+    {
+      "type": "range",
+      "id": "line_clamp",
+      "label": "Shorten long reviews to … lines",
+      "info": "Adds a \"Read more\" link. 0 shows the full review.",
+      "min": 0,
+      "max": 12,
+      "step": 1,
+      "default": 0
+    },
+    {
+      "type": "text",
+      "id": "read_more_text",
+      "label": "Read more text",
+      "default": "Read more"
+    },
+    {
+      "type": "text",
+      "id": "read_less_text",
+      "label": "Read less text",
+      "default": "Show less"
+    },
+
+    {
+      "type": "header",
+      "content": "Card design"
+    },
+    {
+      "type": "select",
+      "id": "card_style",
+      "label": "Card style",
+      "options": [
+        { "value": "solid", "label": "Solid card" },
+        { "value": "glass", "label": "Glass (frosted)" },
+        { "value": "gradient", "label": "Gradient border" },
+        { "value": "outline", "label": "Outline" },
+        { "value": "minimal", "label": "Minimal (no card)" }
+      ],
+      "default": "solid"
+    },
+    {
+      "type": "select",
+      "id": "card_shadow",
+      "label": "Shadow",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "soft", "label": "Soft" },
+        { "value": "medium", "label": "Medium" },
+        { "value": "glow", "label": "Accent glow" }
+      ],
+      "default": "soft"
+    },
+    {
+      "type": "select",
+      "id": "hover_effect",
+      "label": "Hover effect",
+      "options": [
+        { "value": "lift", "label": "Lift" },
+        { "value": "glow", "label": "Accent glow" },
+        { "value": "border", "label": "Accent border" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "lift"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_spotlight",
+      "label": "Cursor spotlight",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "spotlight_color",
+      "label": "Spotlight color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "range",
+      "id": "spotlight_strength",
+      "label": "Spotlight strength",
+      "min": 5,
+      "max": 60,
+      "step": 5,
+      "unit": "%",
+      "default": 15
+    },
+    {
+      "type": "checkbox",
+      "id": "animate_border",
+      "label": "Animate gradient border",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "border_speed",
+      "label": "Border animation speed",
+      "min": 2,
+      "max": 20,
+      "step": 1,
+      "unit": "s",
+      "default": 6
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "label": "Border width",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "glass_blur",
+      "label": "Glass blur",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "card_padding",
+      "label": "Desktop card padding",
+      "min": 8,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 28
+    },
+    {
+      "type": "range",
+      "id": "card_padding_mobile",
+      "label": "Mobile card padding",
+      "min": 8,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 22
+    },
+    {
+      "type": "range",
+      "id": "content_gap",
+      "label": "Space inside card",
+      "min": 6,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "star_size",
+      "label": "Star size",
+      "min": 10,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "quote_icon_size",
+      "label": "Quote icon size",
+      "min": 16,
+      "max": 64,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "avatar_size",
+      "label": "Customer photo size",
+      "min": 28,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 44
+    },
+    {
+      "type": "select",
+      "id": "avatar_shape",
+      "label": "Customer photo shape",
+      "options": [
+        { "value": "circle", "label": "Circle" },
+        { "value": "rounded", "label": "Rounded" },
+        { "value": "square", "label": "Square" }
+      ],
+      "default": "circle"
+    },
+    {
+      "type": "checkbox",
+      "id": "avatar_gradient",
+      "label": "Gradient background for initials",
+      "default": true
+    },
+
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+    {
+      "type": "font_picker",
+      "id": "heading_font",
+      "label": "Heading font",
+      "default": "roboto_n4"
+    },
+    {
+      "type": "select",
+      "id": "heading_weight",
+      "label": "Heading weight",
+      "options": [
+        { "value": "400", "label": "Regular" },
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" },
+        { "value": "800", "label": "Extra bold" }
+      ],
+      "default": "700"
+    },
+    {
+      "type": "select",
+      "id": "heading_transform",
+      "label": "Heading text transform",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "uppercase", "label": "Uppercase" },
+        { "value": "capitalize", "label": "Capitalize" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Desktop heading size",
+      "min": 18,
+      "max": 72,
+      "step": 1,
+      "unit": "px",
+      "default": 42
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "label": "Mobile heading size",
+      "min": 16,
+      "max": 48,
+      "step": 1,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "heading_letter_spacing",
+      "label": "Heading letter spacing",
+      "min": -3,
+      "max": 3,
+      "step": 0.5,
+      "unit": "px",
+      "default": -1
+    },
+    {
+      "type": "range",
+      "id": "eyebrow_size",
+      "label": "Small text size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+    {
+      "type": "range",
+      "id": "subheading_size",
+      "label": "Desktop subheading size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 17
+    },
+    {
+      "type": "range",
+      "id": "subheading_size_mobile",
+      "label": "Mobile subheading size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "font_picker",
+      "id": "body_font",
+      "label": "Review font",
+      "default": "roboto_n4"
+    },
+    {
+      "type": "range",
+      "id": "quote_size",
+      "label": "Desktop review text size",
+      "min": 12,
+      "max": 28,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "quote_size_mobile",
+      "label": "Mobile review text size",
+      "min": 12,
+      "max": 22,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "checkbox",
+      "id": "quote_italic",
+      "label": "Italic review text",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "line_height",
+      "label": "Review line height",
+      "min": 1.2,
+      "max": 2,
+      "step": 0.1,
+      "default": 1.6
+    },
+    {
+      "type": "select",
+      "id": "title_weight",
+      "label": "Review title weight",
+      "options": [
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" }
+      ],
+      "default": "700"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "label": "Desktop review title size",
+      "min": 13,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "title_size_mobile",
+      "label": "Mobile review title size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "select",
+      "id": "name_weight",
+      "label": "Customer name weight",
+      "options": [
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "range",
+      "id": "name_size",
+      "label": "Customer name size",
+      "min": 12,
+      "max": 22,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "meta_size",
+      "label": "Role / date size",
+      "min": 10,
+      "max": 18,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color_background",
+      "id": "background_gradient",
+      "label": "Background gradient",
+      "info": "Overrides the background color when set."
+    },
+    {
+      "type": "color",
+      "id": "eyebrow_color",
+      "label": "Small text color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "subheading_color",
+      "label": "Subheading color",
+      "default": "#6B6B78"
+    },
+    {
+      "type": "color",
+      "id": "card_bg",
+      "label": "Card background",
+      "default": "#F6F6FA"
+    },
+    {
+      "type": "range",
+      "id": "card_opacity",
+      "label": "Card background opacity",
+      "info": "Use 5–15% with Glass on dark backgrounds.",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "card_border_color",
+      "label": "Card border color",
+      "default": "#ECECF2"
+    },
+    {
+      "type": "color",
+      "id": "quote_color",
+      "label": "Review text color",
+      "default": "#2E2E3A"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Review title color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "name_color",
+      "label": "Customer name color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "meta_color",
+      "label": "Role / date color",
+      "default": "#7A7A88"
+    },
+    {
+      "type": "color",
+      "id": "star_color",
+      "label": "Star color",
+      "default": "#F5B300"
+    },
+    {
+      "type": "color",
+      "id": "star_empty_color",
+      "label": "Empty star color",
+      "default": "#E2E2EA"
+    },
+    {
+      "type": "color",
+      "id": "quote_icon_color",
+      "label": "Quote icon color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "verified_color",
+      "label": "Verified badge color",
+      "default": "#16A34A"
+    },
+    {
+      "type": "color",
+      "id": "avatar_bg",
+      "label": "Initials background",
+      "info": "Used when the initials gradient is off.",
+      "default": "#EEEBFF"
+    },
+    {
+      "type": "color",
+      "id": "avatar_text_color",
+      "label": "Initials text color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_1",
+      "label": "Accent color 1",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "accent_2",
+      "label": "Accent color 2",
+      "default": "#FF6B9A"
+    },
+    {
+      "type": "color",
+      "id": "nav_bg",
+      "label": "Arrow background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "nav_icon_color",
+      "label": "Arrow icon color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "dot_color",
+      "label": "Dot color",
+      "default": "#D6D6E0"
+    },
+    {
+      "type": "color",
+      "id": "dot_active_color",
+      "label": "Active dot color",
+      "default": "#111118"
+    },
+
+    {
+      "type": "header",
+      "content": "Effects"
+    },
+    {
+      "type": "select",
+      "id": "background_effect",
+      "label": "Background effect",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "glow", "label": "Accent glow" },
+        { "value": "grid", "label": "Grid lines" },
+        { "value": "dots", "label": "Dot pattern" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "color",
+      "id": "effect_color",
+      "label": "Pattern color",
+      "default": "#111118"
+    },
+    {
+      "type": "range",
+      "id": "effect_strength",
+      "label": "Background effect strength",
+      "min": 2,
+      "max": 40,
+      "step": 2,
+      "unit": "%",
+      "default": 10
+    },
+    {
+      "type": "select",
+      "id": "entrance_animation",
+      "label": "Scroll-in animation",
+      "info": "Hidden in the theme editor.",
+      "options": [
+        { "value": "fade_up", "label": "Fade up" },
+        { "value": "fade", "label": "Fade" },
+        { "value": "blur", "label": "Blur in" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "fade_up"
+    },
+    {
+      "type": "range",
+      "id": "stagger",
+      "label": "Delay between cards",
+      "min": 0,
+      "max": 300,
+      "step": 20,
+      "unit": "ms",
+      "default": 80
+    },
+
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Full width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Content max width",
+      "min": 800,
+      "max": 1800,
+      "step": 20,
+      "unit": "px",
+      "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Desktop top padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 88
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Desktop bottom padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 88
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "label": "Mobile top padding",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "label": "Mobile bottom padding",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "side_padding",
+      "label": "Desktop side padding",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "side_padding_mobile",
+      "label": "Mobile side padding",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Desktop space between cards",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "gap_mobile",
+      "label": "Mobile space between cards",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 14
+    }
+
+  ],
+
+  "blocks": [
+    {
+      "type": "testimonial",
+      "name": "Testimonial",
+      "settings": [
+        {
+          "type": "range",
+          "id": "rating",
+          "label": "Star rating",
+          "info": "0 hides the stars.",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "default": 5
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Review title (optional)",
+          "default": "Exceeded my expectations"
+        },
+        {
+          "type": "textarea",
+          "id": "quote",
+          "label": "Review",
+          "default": "The quality is incredible and it arrived two days early. I've already ordered another one as a gift for my sister."
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Customer photo",
+          "info": "Initials are shown if empty."
+        },
+        {
+          "type": "text",
+          "id": "name",
+          "label": "Customer name",
+          "default": "Priya Sharma"
+        },
+        {
+          "type": "text",
+          "id": "role",
+          "label": "Role or location (optional)",
+          "default": "Mumbai"
+        },
+        {
+          "type": "text",
+          "id": "date",
+          "label": "Date (optional)",
+          "info": "Written exactly as you type it, e.g. 2 weeks ago or March 2026."
+        },
+        {
+          "type": "checkbox",
+          "id": "verified",
+          "label": "Verified buyer",
+          "default": true
+        },
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Purchased product (optional)"
+        },
+        {
+          "type": "image_picker",
+          "id": "review_image",
+          "label": "Review photo (optional)",
+          "info": "e.g. the customer's photo of the product."
+        }
+      ]
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "Testimonials",
+      "blocks": [
+        {
+          "type": "testimonial",
+          "settings": {
+            "title": "Exceeded my expectations",
+            "quote": "The quality is incredible and it arrived two days early. I've already ordered another one as a gift for my sister.",
+            "name": "Priya Sharma",
+            "role": "Mumbai"
+          }
+        },
+        {
+          "type": "testimonial",
+          "settings": {
+            "title": "Customer service is gold",
+            "quote": "I had a question about sizing and got a reply on WhatsApp within ten minutes. The exchange was completely painless.",
+            "name": "Rahul Verma",
+            "role": "Delhi"
+          }
+        },
+        {
+          "type": "testimonial",
+          "settings": {
+            "rating": 4,
+            "title": "Great value",
+            "quote": "Looks even better in person. Packaging was beautiful too, it genuinely felt like opening a present.",
+            "name": "Ananya Iyer",
+            "role": "Bengaluru"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Testimonials — Scrolling Wall",
+      "settings": {
+        "layout": "marquee",
+        "marquee_rows": "2",
+        "card_style": "solid",
+        "card_bg": "#FFFFFF",
+        "background_color": "#F6F6FA",
+        "card_shadow": "soft",
+        "hover_effect": "border",
+        "enable_spotlight": false,
+        "quote_icon_position": "inline",
+        "show_quote_icon": false,
+        "author_position": "top",
+        "eyebrow": "Wall of love",
+        "heading": "Don't just take <em>our</em> word for it"
+      },
+      "blocks": [
+        { "type": "testimonial", "settings": { "title": "", "quote": "Honestly the best purchase I've made this year. Worth every rupee.", "name": "Sneha Kapoor", "role": "Pune" } },
+        { "type": "testimonial", "settings": { "title": "", "quote": "Super fast delivery and the product feels premium. Will order again.", "name": "Arjun Mehta", "role": "Ahmedabad" } },
+        { "type": "testimonial", "settings": { "title": "", "quote": "I was skeptical at first but it really works. My whole family uses it now.", "name": "Kavya Nair", "role": "Kochi" } },
+        { "type": "testimonial", "settings": { "title": "", "quote": "Loved the packaging and the little handwritten note. Such a nice touch!", "name": "Rohan Das", "role": "Kolkata" } },
+        { "type": "testimonial", "settings": { "title": "", "rating": 4, "quote": "Great quality for the price. Shipping took a day longer than expected, but support kept me updated.", "name": "Meera Joshi", "role": "Jaipur" } },
+        { "type": "testimonial", "settings": { "title": "", "quote": "Gifted this to my parents and they keep thanking me. 10/10.", "name": "Vikram Singh", "role": "Chandigarh" } }
+      ]
+    },
+    {
+      "name": "Testimonials — Dark Carousel",
+      "settings": {
+        "layout": "carousel",
+        "card_style": "gradient",
+        "background_color": "#0B0B14",
+        "background_gradient": "linear-gradient(160deg, rgba(11, 11, 20, 1) 0%, rgba(26, 18, 48, 1) 100%)",
+        "background_effect": "glow",
+        "effect_strength": 14,
+        "eyebrow_color": "#B7A9FF",
+        "heading_color": "#FFFFFF",
+        "subheading_color": "#A3A3BA",
+        "card_bg": "#FFFFFF",
+        "card_opacity": 5,
+        "card_border_color": "#2A2640",
+        "quote_color": "#D4D4E0",
+        "title_color": "#FFFFFF",
+        "name_color": "#FFFFFF",
+        "meta_color": "#9A9AB0",
+        "star_empty_color": "#3A3550",
+        "quote_icon_color": "#B7A9FF",
+        "verified_color": "#4ADE80",
+        "card_shadow": "none",
+        "hover_effect": "glow",
+        "spotlight_color": "#8B7BFF",
+        "spotlight_strength": 20,
+        "nav_bg": "#15131F",
+        "nav_icon_color": "#FFFFFF",
+        "dot_color": "#3A3550",
+        "dot_active_color": "#FFFFFF",
+        "autoplay": true,
+        "arrows_position": "sides"
+      },
+      "blocks": [
+        { "type": "testimonial", "settings": { "title": "Exceeded my expectations", "quote": "The quality is incredible and it arrived two days early. I've already ordered another one as a gift for my sister.", "name": "Priya Sharma", "role": "Mumbai" } },
+        { "type": "testimonial", "settings": { "title": "Customer service is gold", "quote": "I had a question about sizing and got a reply on WhatsApp within ten minutes. The exchange was completely painless.", "name": "Rahul Verma", "role": "Delhi" } },
+        { "type": "testimonial", "settings": { "title": "Great value", "rating": 4, "quote": "Looks even better in person. Packaging was beautiful too, it genuinely felt like opening a present.", "name": "Ananya Iyer", "role": "Bengaluru" } },
+        { "type": "testimonial", "settings": { "title": "My new favourite brand", "quote": "Third order this month. Consistent quality every single time, and delivery is always on schedule.", "name": "Karan Malhotra", "role": "Lucknow" } },
+        { "type": "testimonial", "settings": { "title": "Totally worth it", "quote": "I compared five brands before buying. This one wins on quality, price and support. No regrets.", "name": "Isha Reddy", "role": "Hyderabad" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
