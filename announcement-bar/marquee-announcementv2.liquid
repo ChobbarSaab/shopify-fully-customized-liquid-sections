@@ -1,0 +1,1079 @@
+{% assign marquee_font = section.settings.font_family %}
+
+<div
+  id="CustomMarquee-{{ section.id }}"
+  class="custom-marquee"
+  style="
+    --marquee-bg: {{ section.settings.background_color }};
+    --marquee-text: {{ section.settings.text_color }};
+    --marquee-separator: {{ section.settings.separator_color }};
+    --marquee-speed: {{ section.settings.speed }}s;
+    --marquee-height: {{ section.settings.height }}px;
+    --marquee-mobile-height: {{ section.settings.mobile_height }}px;
+    --marquee-font-size: {{ section.settings.font_size }}px;
+    --marquee-mobile-font-size: {{ section.settings.mobile_font_size }}px;
+    --marquee-letter-spacing: {{ section.settings.letter_spacing }}px;
+    --marquee-mobile-letter-spacing: {{ section.settings.mobile_letter_spacing }}px;
+    --marquee-gap: {{ section.settings.gap }}px;
+    --marquee-mobile-gap: {{ section.settings.mobile_gap }}px;
+    --marquee-font-weight: {{ section.settings.font_weight }};
+    --marquee-line-height: {{ section.settings.line_height }};
+    --marquee-separator-size: {{ section.settings.separator_size }}px;
+    --marquee-separator-gap: {{ section.settings.separator_gap }}px;
+    --marquee-fade-width: {{ section.settings.fade_width }}px;
+  "
+>
+  <div class="custom-marquee__viewport">
+
+    {% if section.settings.enable_fade %}
+      <div
+        class="custom-marquee__fade custom-marquee__fade--left"
+        aria-hidden="true"
+      ></div>
+
+      <div
+        class="custom-marquee__fade custom-marquee__fade--right"
+        aria-hidden="true"
+      ></div>
+    {% endif %}
+
+    <div
+      class="
+        custom-marquee__track
+        {% if section.settings.pause_on_hover %}
+          custom-marquee__track--pause
+        {% endif %}
+        {% unless section.settings.enable_animation %}
+          custom-marquee__track--static
+        {% endunless %}
+      "
+      data-direction="{{ section.settings.direction }}"
+    >
+
+      <div class="custom-marquee__group">
+
+        {% for block in section.blocks %}
+
+          <div
+            class="custom-marquee__item"
+            {{ block.shopify_attributes }}
+          >
+
+            {% if block.settings.link != blank %}
+              <a
+                href="{{ block.settings.link }}"
+                class="custom-marquee__link"
+              >
+            {% endif %}
+
+              <span class="custom-marquee__text">
+                {{ block.settings.text }}
+              </span>
+
+              {% if section.settings.show_separator %}
+                <span
+                  class="custom-marquee__separator"
+                  aria-hidden="true"
+                >
+                  {% case section.settings.separator_style %}
+
+                    {% when 'line' %}
+                      |
+
+                    {% when 'dot' %}
+                      •
+
+                    {% when 'diamond' %}
+                      ◆
+
+                    {% when 'star' %}
+                      ★
+
+                    {% when 'arrow' %}
+                      →
+
+                    {% when 'circle' %}
+                      ○
+
+                    {% when 'slash' %}
+                      /
+
+                    {% when 'plus' %}
+                      +
+
+                    {% when 'sparkle' %}
+                      ✦
+
+                  {% endcase %}
+                </span>
+              {% endif %}
+
+            {% if block.settings.link != blank %}
+              </a>
+            {% endif %}
+
+          </div>
+
+        {% endfor %}
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<style>
+  {{ marquee_font | font_face: font_display: 'swap' }}
+
+  #CustomMarquee-{{ section.id }} {
+    width: 100%;
+    height: var(--marquee-height);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    position: relative;
+    background: var(--marquee-bg);
+    color: var(--marquee-text);
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__track {
+    display: flex;
+    width: max-content;
+    flex-shrink: 0;
+    will-change: transform;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+
+    font-family: {{ marquee_font.family }}, {{ marquee_font.fallback_families }};
+    font-size: var(--marquee-font-size);
+    font-weight: var(--marquee-font-weight);
+    line-height: var(--marquee-line-height);
+    letter-spacing: var(--marquee-letter-spacing);
+
+    {% if marquee_font.style == 'italic' %}
+      font-style: italic;
+    {% else %}
+      font-style: normal;
+    {% endif %}
+
+    {% case section.settings.text_transform %}
+      {% when 'uppercase' %}
+        text-transform: uppercase;
+
+      {% when 'lowercase' %}
+        text-transform: lowercase;
+
+      {% when 'capitalize' %}
+        text-transform: capitalize;
+
+      {% else %}
+        text-transform: none;
+    {% endcase %}
+
+    {% if section.settings.text_decoration == 'underline' %}
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    {% else %}
+      text-decoration: none;
+    {% endif %}
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__link {
+    display: flex;
+    align-items: center;
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__text {
+    display: inline-block;
+    margin-left: var(--marquee-gap);
+    white-space: nowrap;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__separator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: var(--marquee-separator-gap);
+
+    color: var(--marquee-separator);
+
+    font-size: var(--marquee-separator-size);
+    line-height: 1;
+
+    flex-shrink: 0;
+  }
+
+  /* Static mode */
+  #CustomMarquee-{{ section.id }} .custom-marquee__track--static {
+    width: 100%;
+    justify-content: center;
+    transform: translateX(0) !important;
+    animation: none !important;
+  }
+
+  #CustomMarquee-{{ section.id }} .custom-marquee__track--static
+    .custom-marquee__group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Pause on hover */
+  #CustomMarquee-{{ section.id }}
+    .custom-marquee__track--pause:hover {
+    animation-play-state: paused !important;
+  }
+
+  /* Edge fade */
+  {% if section.settings.enable_fade %}
+
+    #CustomMarquee-{{ section.id }} .custom-marquee__fade {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+
+      width: var(--marquee-fade-width);
+
+      z-index: 5;
+
+      pointer-events: none;
+    }
+
+    #CustomMarquee-{{ section.id }}
+      .custom-marquee__fade--left {
+      left: 0;
+
+      background: linear-gradient(
+        to right,
+        var(--marquee-bg),
+        transparent
+      );
+    }
+
+    #CustomMarquee-{{ section.id }}
+      .custom-marquee__fade--right {
+      right: 0;
+
+      background: linear-gradient(
+        to left,
+        var(--marquee-bg),
+        transparent
+      );
+    }
+
+  {% endif %}
+
+  @media screen and (max-width: 749px) {
+
+    #CustomMarquee-{{ section.id }} {
+      height: var(--marquee-mobile-height);
+    }
+
+    #CustomMarquee-{{ section.id }} .custom-marquee__group {
+      font-size: var(--marquee-mobile-font-size);
+      letter-spacing: var(--marquee-mobile-letter-spacing);
+    }
+
+    #CustomMarquee-{{ section.id }} .custom-marquee__text {
+      margin-left: var(--marquee-mobile-gap);
+    }
+
+    #CustomMarquee-{{ section.id }} .custom-marquee__separator {
+      margin-left: var(--marquee-mobile-gap);
+    }
+
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    #CustomMarquee-{{ section.id }}
+      .custom-marquee__track {
+      animation: none !important;
+      transform: translateX(0) !important;
+    }
+
+  }
+</style>
+
+<script>
+  (function () {
+
+    function initCustomMarquee() {
+
+      var marquee = document.getElementById(
+        'CustomMarquee-{{ section.id }}'
+      );
+
+      if (!marquee) {
+        return;
+      }
+
+      var viewport = marquee.querySelector(
+        '.custom-marquee__viewport'
+      );
+
+      var track = marquee.querySelector(
+        '.custom-marquee__track'
+      );
+
+      var originalGroup = marquee.querySelector(
+        '.custom-marquee__group'
+      );
+
+      if (
+        !viewport ||
+        !track ||
+        !originalGroup
+      ) {
+        return;
+      }
+
+      var direction =
+        track.dataset.direction;
+
+      var speed =
+        {{ section.settings.speed | json }};
+
+      var animationEnabled =
+        {{ section.settings.enable_animation | json }};
+
+      var disableSingleAnnouncement =
+        {{ section.settings.disable_single_announcement | json }};
+
+      var announcementCount =
+        {{ section.blocks.size }};
+
+      var reducedMotion =
+        window.matchMedia(
+          '(prefers-reduced-motion: reduce)'
+        );
+
+      function buildMarquee() {
+
+        var shouldAnimate =
+          animationEnabled &&
+          !reducedMotion.matches;
+
+        /*
+         * Automatically disable animation
+         * when there is only one announcement.
+         */
+        if (
+          disableSingleAnnouncement &&
+          announcementCount <= 1
+        ) {
+          shouldAnimate = false;
+        }
+
+        /*
+         * Completely static mode.
+         */
+        if (!shouldAnimate) {
+
+          track.style.animation = 'none';
+
+          track.style.transform =
+            'translate3d(0,0,0)';
+
+          track.innerHTML = '';
+
+          var staticGroup =
+            originalGroup.cloneNode(true);
+
+          track.appendChild(staticGroup);
+
+          track.classList.add(
+            'custom-marquee__track--static'
+          );
+
+          return;
+        }
+
+        /*
+         * Animated mode.
+         */
+        track.classList.remove(
+          'custom-marquee__track--static'
+        );
+
+        track.style.animation = 'none';
+
+        track.style.transform =
+          'translate3d(0,0,0)';
+
+        track.innerHTML = '';
+
+        /*
+         * Base group.
+         */
+        var baseGroup =
+          originalGroup.cloneNode(true);
+
+        track.appendChild(baseGroup);
+
+        /*
+         * Measure the group.
+         */
+        var groupWidth =
+          baseGroup.getBoundingClientRect().width;
+
+        var viewportWidth =
+          viewport.getBoundingClientRect().width;
+
+        if (
+          !groupWidth ||
+          !viewportWidth
+        ) {
+          return;
+        }
+
+        /*
+         * Add enough copies to completely
+         * fill the viewport plus one full
+         * additional group.
+         */
+        var requiredWidth =
+          viewportWidth +
+          groupWidth;
+
+        while (
+          track.scrollWidth <
+          requiredWidth
+        ) {
+
+          track.appendChild(
+            baseGroup.cloneNode(true)
+          );
+
+        }
+
+        /*
+         * IMPORTANT:
+         * One full group is the exact
+         * animation cycle distance.
+         */
+        var cycleWidth =
+          baseGroup.getBoundingClientRect().width;
+
+        var animationName =
+          'custom-marquee-scroll-{{ section.id }}';
+
+        var styleId =
+          'custom-marquee-keyframes-{{ section.id }}';
+
+        var existingStyle =
+          document.getElementById(styleId);
+
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+
+        var style =
+          document.createElement('style');
+
+        style.id = styleId;
+
+        if (direction === 'left') {
+
+          style.textContent =
+            '@keyframes ' +
+            animationName +
+            ' {' +
+
+            'from {' +
+            'transform: translate3d(0,0,0);' +
+            '}' +
+
+            'to {' +
+            'transform: translate3d(-' +
+            cycleWidth +
+            'px,0,0);' +
+            '}' +
+
+            '}';
+
+        } else {
+
+          style.textContent =
+            '@keyframes ' +
+            animationName +
+            ' {' +
+
+            'from {' +
+            'transform: translate3d(-' +
+            cycleWidth +
+            'px,0,0);' +
+            '}' +
+
+            'to {' +
+            'transform: translate3d(0,0,0);' +
+            '}' +
+
+            '}';
+
+        }
+
+        document.head.appendChild(style);
+
+        /*
+         * Start position for right-to-left.
+         */
+        if (direction === 'left') {
+
+          track.style.transform =
+            'translate3d(0,0,0)';
+
+        } else {
+
+          track.style.transform =
+            'translate3d(-' +
+            cycleWidth +
+            'px,0,0)';
+        }
+
+        /*
+         * Apply animation.
+         */
+        track.style.animation =
+          animationName +
+          ' ' +
+          speed +
+          's linear infinite';
+      }
+
+      /*
+       * Initial build.
+       */
+      function start() {
+
+        /*
+         * Wait for fonts so measurements
+         * are accurate.
+         */
+        if (
+          document.fonts &&
+          document.fonts.ready
+        ) {
+
+          document.fonts.ready.then(
+            function () {
+              buildMarquee();
+            }
+          );
+
+        } else {
+
+          buildMarquee();
+
+        }
+      }
+
+      start();
+
+      /*
+       * Rebuild when browser size changes.
+       */
+      var resizeTimer;
+
+      window.addEventListener(
+        'resize',
+        function () {
+
+          clearTimeout(resizeTimer);
+
+          resizeTimer =
+            setTimeout(
+              function () {
+                buildMarquee();
+              },
+              150
+            );
+
+        },
+        { passive: true }
+      );
+
+      /*
+       * Rebuild if reduced-motion
+       * preference changes.
+       */
+      if (
+        reducedMotion.addEventListener
+      ) {
+
+        reducedMotion.addEventListener(
+          'change',
+          function () {
+            buildMarquee();
+          }
+        );
+
+      }
+
+    }
+
+    if (
+      document.readyState === 'loading'
+    ) {
+
+      document.addEventListener(
+        'DOMContentLoaded',
+        initCustomMarquee
+      );
+
+    } else {
+
+      initCustomMarquee();
+
+    }
+
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Custom Marquee",
+  "max_blocks": 20,
+
+  "settings": [
+
+    {
+      "type": "header",
+      "content": "Animation"
+    },
+
+    {
+      "type": "range",
+      "id": "speed",
+      "label": "Scrolling speed",
+      "min": 10,
+      "max": 120,
+      "step": 5,
+      "unit": "s",
+      "default": 30
+    },
+
+    {
+      "type": "checkbox",
+      "id": "enable_animation",
+      "label": "Enable marquee animation",
+      "default": true
+    },
+
+    {
+      "type": "checkbox",
+      "id": "disable_single_announcement",
+      "label": "Keep static when only one announcement",
+      "default": true
+    },
+
+    {
+      "type": "select",
+      "id": "direction",
+      "label": "Scroll direction",
+      "options": [
+        {
+          "value": "left",
+          "label": "Right to left"
+        },
+        {
+          "value": "right",
+          "label": "Left to right"
+        }
+      ],
+      "default": "left"
+    },
+
+    {
+      "type": "checkbox",
+      "id": "pause_on_hover",
+      "label": "Pause on hover",
+      "default": true
+    },
+
+    {
+      "type": "header",
+      "content": "Typography"
+    },
+
+    {
+      "type": "font_picker",
+      "id": "font_family",
+      "label": "Font",
+      "default": "roboto_n4"
+    },
+
+    {
+      "type": "select",
+      "id": "font_weight",
+      "label": "Font weight",
+      "options": [
+        {
+          "value": "400",
+          "label": "Regular"
+        },
+        {
+          "value": "500",
+          "label": "Medium"
+        },
+        {
+          "value": "600",
+          "label": "Semi bold"
+        },
+        {
+          "value": "700",
+          "label": "Bold"
+        },
+        {
+          "value": "800",
+          "label": "Extra bold"
+        }
+      ],
+      "default": "500"
+    },
+
+    {
+      "type": "select",
+      "id": "text_transform",
+      "label": "Text transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        },
+        {
+          "value": "capitalize",
+          "label": "Capitalize"
+        }
+      ],
+      "default": "uppercase"
+    },
+
+    {
+      "type": "select",
+      "id": "text_decoration",
+      "label": "Text decoration",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "underline",
+          "label": "Underline"
+        }
+      ],
+      "default": "none"
+    },
+
+    {
+      "type": "range",
+      "id": "line_height",
+      "label": "Line height",
+      "min": 1,
+      "max": 2,
+      "step": 0.1,
+      "default": 1.2
+    },
+
+    {
+      "type": "range",
+      "id": "font_size",
+      "label": "Desktop font size",
+      "min": 8,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+
+    {
+      "type": "range",
+      "id": "mobile_font_size",
+      "label": "Mobile font size",
+      "min": 8,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+
+    {
+      "type": "range",
+      "id": "letter_spacing",
+      "label": "Desktop letter spacing",
+      "min": -1,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+
+    {
+      "type": "range",
+      "id": "mobile_letter_spacing",
+      "label": "Mobile letter spacing",
+      "min": -1,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#111111"
+    },
+
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#FFFFFF"
+    },
+
+    {
+      "type": "color",
+      "id": "separator_color",
+      "label": "Separator color",
+      "default": "#FFFFFF"
+    },
+
+    {
+      "type": "header",
+      "content": "Desktop layout"
+    },
+
+    {
+      "type": "range",
+      "id": "height",
+      "label": "Bar height",
+      "min": 24,
+      "max": 90,
+      "step": 1,
+      "unit": "px",
+      "default": 40
+    },
+
+    {
+      "type": "range",
+      "id": "gap",
+      "label": "Announcement spacing",
+      "min": 5,
+      "max": 120,
+      "step": 5,
+      "unit": "px",
+      "default": 30
+    },
+
+    {
+      "type": "header",
+      "content": "Mobile layout"
+    },
+
+    {
+      "type": "range",
+      "id": "mobile_height",
+      "label": "Mobile bar height",
+      "min": 24,
+      "max": 70,
+      "step": 1,
+      "unit": "px",
+      "default": 36
+    },
+
+    {
+      "type": "range",
+      "id": "mobile_gap",
+      "label": "Mobile announcement spacing",
+      "min": 5,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 20
+    },
+
+    {
+      "type": "header",
+      "content": "Separators"
+    },
+
+    {
+      "type": "checkbox",
+      "id": "show_separator",
+      "label": "Show separators",
+      "default": true
+    },
+
+    {
+      "type": "select",
+      "id": "separator_style",
+      "label": "Separator style",
+      "options": [
+        {
+          "value": "line",
+          "label": "Vertical line |"
+        },
+        {
+          "value": "dot",
+          "label": "Dot •"
+        },
+        {
+          "value": "diamond",
+          "label": "Diamond ◆"
+        },
+        {
+          "value": "star",
+          "label": "Star ★"
+        },
+        {
+          "value": "arrow",
+          "label": "Arrow →"
+        },
+        {
+          "value": "circle",
+          "label": "Circle ○"
+        },
+        {
+          "value": "slash",
+          "label": "Slash /"
+        },
+        {
+          "value": "plus",
+          "label": "Plus +"
+        },
+        {
+          "value": "sparkle",
+          "label": "Sparkle ✦"
+        }
+      ],
+      "default": "line"
+    },
+
+    {
+      "type": "range",
+      "id": "separator_size",
+      "label": "Separator size",
+      "min": 8,
+      "max": 36,
+      "step": 1,
+      "unit": "px",
+      "default": 14
+    },
+
+    {
+      "type": "range",
+      "id": "separator_gap",
+      "label": "Separator spacing",
+      "min": 5,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 20
+    },
+
+    {
+      "type": "header",
+      "content": "Edge fade"
+    },
+
+    {
+      "type": "checkbox",
+      "id": "enable_fade",
+      "label": "Enable edge fade",
+      "default": true
+    },
+
+    {
+      "type": "range",
+      "id": "fade_width",
+      "label": "Fade width",
+      "min": 10,
+      "max": 150,
+      "step": 5,
+      "unit": "px",
+      "default": 45
+    }
+
+  ],
+
+  "blocks": [
+    {
+      "type": "announcement",
+      "name": "Announcement",
+      "settings": [
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Announcement text",
+          "default": "FREE SHIPPING ON ORDERS OVER $50"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Optional link"
+        }
+      ]
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "Custom Marquee",
+      "blocks": [
+        {
+          "type": "announcement"
+        },
+        {
+          "type": "announcement"
+        },
+        {
+          "type": "announcement"
+        },
+        {
+          "type": "announcement"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
