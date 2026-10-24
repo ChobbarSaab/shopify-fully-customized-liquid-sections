@@ -1,0 +1,2760 @@
+{%- comment -%}
+  ============================================================
+  FAQ ACCORDION — fully customizable Shopify OS 2.0 section
+  ------------------------------------------------------------
+  • 3 layouts: Centered, Split (heading + CTA beside FAQs), Two columns
+  • 5 item styles: Cards, Boxed, Lines, Glass, Minimal
+  • 4 icon styles, left/right icon, optional numbering
+  • Category tabs (auto-built from each question's category)
+  • Live search with "no results" message
+  • "Still have questions?" contact card
+  • Google FAQ rich-results schema (JSON-LD) toggle
+  • Smooth open/close, scroll-in animation, deep links (#question)
+  • Reduced-motion support, keyboard + screen-reader friendly
+  ============================================================
+{%- endcomment -%}
+
+{%- liquid
+  assign s = section.settings
+
+  assign heading_font = s.heading_font
+  assign body_font = s.body_font
+  assign heading_font_bold = heading_font | font_modify: 'weight', 'bold'
+  assign body_font_bold = body_font | font_modify: 'weight', 'bold'
+
+  assign section_bg = s.background_color
+  if s.background_gradient != blank
+    assign section_bg = s.background_gradient
+  endif
+
+  assign item_alpha = s.item_opacity | divided_by: 100.0
+  assign item_bg = s.item_bg | color_modify: 'alpha', item_alpha
+
+  assign effect_alpha = s.effect_strength | divided_by: 100.0
+  assign effect_color = s.effect_color | color_modify: 'alpha', effect_alpha
+
+  assign block_count = section.blocks.size
+
+  comment
+    Build a unique list of categories for the tabs.
+  endcomment
+  assign cat_list = ''
+  for block in section.blocks
+    if block.settings.category != blank
+      assign cat_name = block.settings.category | strip
+      assign cat_key = '|' | append: cat_name | append: '|'
+      unless cat_list contains cat_key
+        assign cat_list = cat_list | append: cat_key
+      endunless
+    endif
+  endfor
+  assign categories = cat_list | split: '|'
+
+  assign show_tabs = false
+  if s.show_tabs and cat_list != ''
+    assign show_tabs = true
+  endif
+
+  assign show_header = false
+  if s.eyebrow != blank or s.heading != blank or s.subheading != blank
+    assign show_header = true
+  endif
+
+  assign show_cta = false
+  if s.show_cta
+    if s.cta_heading != blank or s.cta_text != blank or s.cta_button_label != blank
+      assign show_cta = true
+    endif
+  endif
+-%}
+
+{%- capture cta_inner -%}
+  {%- if s.cta_heading != blank -%}
+    <p class="fq__cta-heading">{{ s.cta_heading | escape }}</p>
+  {%- endif -%}
+  {%- if s.cta_text != blank -%}
+    <p class="fq__cta-text">{{ s.cta_text | escape }}</p>
+  {%- endif -%}
+  {%- if s.cta_button_label != blank -%}
+    <a href="{{ s.cta_button_link | default: '/pages/contact' }}" class="fq__cta-button">
+      {{- s.cta_button_label | escape -}}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+  {%- endif -%}
+{%- endcapture -%}
+
+<section
+  id="FaqAccordion-{{ section.id }}"
+  class="
+    fq
+    fq--layout-{{ s.layout }}
+    fq--style-{{ s.item_style }}
+    fq--icon-{{ s.icon_style }}
+    fq--icon-pos-{{ s.icon_position }}
+    fq--icon-bg-{{ s.icon_background }}
+    fq--active-{{ s.active_indicator }}
+    fq--shadow-{{ s.item_shadow }}
+    fq--entrance-{{ s.entrance_animation }}
+    fq--highlight-{{ s.heading_highlight }}
+    fq--btn-{{ s.cta_button_style }}
+    {% if s.sticky_header %}fq--sticky{% endif %}
+    {% if s.full_width %}fq--full{% endif %}
+    {% if s.hover_lift %}fq--hover-lift{% endif %}
+  "
+  data-single="{{ s.close_others }}"
+  data-entrance="{{ s.entrance_animation }}"
+  data-stagger="{{ s.stagger }}"
+  {% if s.heading != blank %}aria-label="{{ s.heading | strip_html | escape }}"{% endif %}
+>
+  {%- if s.background_effect != 'none' -%}
+    <div class="fq__bg fq__bg--{{ s.background_effect }}" aria-hidden="true"></div>
+  {%- endif -%}
+
+  <div class="fq__inner">
+
+    {%- if show_header or s.layout == 'split' and show_cta -%}
+      <div class="fq__aside">
+        <div class="fq__aside-inner">
+          {%- if show_header -%}
+            <div class="fq__header fq__reveal">
+              {%- if s.eyebrow != blank -%}
+                <p class="fq__eyebrow">{{ s.eyebrow | escape }}</p>
+              {%- endif -%}
+
+              {%- if s.heading != blank -%}
+                <{{ s.heading_tag }} class="fq__heading">{{ s.heading }}</{{ s.heading_tag }}>
+              {%- endif -%}
+
+              {%- if s.subheading != blank -%}
+                <div class="fq__subheading">{{ s.subheading }}</div>
+              {%- endif -%}
+            </div>
+          {%- endif -%}
+
+          {%- if show_cta and s.layout == 'split' -%}
+            <div class="fq__cta fq__reveal">{{ cta_inner }}</div>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endif -%}
+
+    <div class="fq__main">
+
+      {%- if show_tabs or s.show_search -%}
+        <div class="fq__tools fq__reveal">
+          {%- if s.show_search -%}
+            <div class="fq__search">
+              <svg class="fq__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input
+                type="search"
+                class="fq__search-input"
+                placeholder="{{ s.search_placeholder | escape }}"
+                aria-label="{{ s.search_placeholder | default: 'Search questions' | escape }}"
+                autocomplete="off"
+              >
+            </div>
+          {%- endif -%}
+
+          {%- if show_tabs -%}
+            <div class="fq__tabs" role="group" aria-label="{{ s.tabs_label | default: 'Filter by topic' | escape }}">
+              <button type="button" class="fq__tab is-active" data-category="all" aria-pressed="true">
+                {{- s.all_tab_label | default: 'All' | escape -}}
+              </button>
+              {%- for cat in categories -%}
+                {%- if cat != blank -%}
+                  <button type="button" class="fq__tab" data-category="{{ cat | handleize }}" aria-pressed="false">
+                    {{- cat | escape -}}
+                  </button>
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+
+      {%- if block_count > 0 -%}
+        <ul class="fq__list fq__reveal" role="list">
+          {%- for block in section.blocks -%}
+            {%- liquid
+              assign b = block.settings
+              assign is_open = false
+              if b.start_open
+                assign is_open = true
+              endif
+              if s.open_first and forloop.first
+                assign is_open = true
+              endif
+              assign number = forloop.index | prepend: '0' | slice: -2, 2
+            -%}
+
+            <li
+              id="{{ b.question | handleize | default: block.id }}"
+              class="fq__item{% if is_open %} is-open{% endif %}"
+              data-category="{% if b.category != blank %}{{ b.category | strip | handleize }}{% endif %}"
+              style="--fq-i: {{ forloop.index }};"
+              {{ block.shopify_attributes }}
+            >
+              <h3 class="fq__q-wrap">
+                <button
+                  type="button"
+                  class="fq__question"
+                  id="FaqQ-{{ block.id }}"
+                  aria-expanded="{{ is_open }}"
+                  aria-controls="FaqA-{{ block.id }}"
+                >
+                  {%- if s.show_numbers -%}
+                    <span class="fq__number" aria-hidden="true">{{ number }}</span>
+                  {%- endif -%}
+
+                  <span class="fq__q-text">{{ b.question | escape }}</span>
+
+                  <span class="fq__icon" aria-hidden="true">
+                    {%- case s.icon_style -%}
+                      {%- when 'chevron' -%}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+                      {%- when 'arrow' -%}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                      {%- else -%}
+                        <span class="fq__plus"><span></span><span></span></span>
+                    {%- endcase -%}
+                  </span>
+                </button>
+              </h3>
+
+              <div
+                class="fq__panel"
+                id="FaqA-{{ block.id }}"
+                role="region"
+                aria-labelledby="FaqQ-{{ block.id }}"
+              >
+                <div class="fq__panel-inner">
+                  <div class="fq__answer">{{ b.answer }}</div>
+                </div>
+              </div>
+            </li>
+          {%- endfor -%}
+        </ul>
+
+        {%- if s.show_search -%}
+          <p class="fq__empty" hidden>{{ s.no_results_text | escape }}</p>
+        {%- endif -%}
+      {%- endif -%}
+
+      {%- if show_cta -%}
+        {%- if s.layout == 'split' -%}
+          <div class="fq__cta fq__cta--mobile fq__reveal">{{ cta_inner }}</div>
+        {%- else -%}
+          <div class="fq__cta fq__reveal">{{ cta_inner }}</div>
+        {%- endif -%}
+      {%- endif -%}
+    </div>
+
+  </div>
+</section>
+
+{%- if s.enable_schema and block_count > 0 -%}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {%- for block in section.blocks -%}
+          {
+            "@type": "Question",
+            "name": {{ block.settings.question | json }},
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": {{ block.settings.answer | json }}
+            }
+          }{% unless forloop.last %},{% endunless %}
+        {%- endfor -%}
+      ]
+    }
+  </script>
+{%- endif -%}
+
+<style>
+  {{ heading_font | font_face: font_display: 'swap' }}
+  {% if heading_font_bold %}{{ heading_font_bold | font_face: font_display: 'swap' }}{% endif %}
+  {{ body_font | font_face: font_display: 'swap' }}
+  {% if body_font_bold %}{{ body_font_bold | font_face: font_display: 'swap' }}{% endif %}
+
+  /* ---------- Settings → CSS variables ---------- */
+  #FaqAccordion-{{ section.id }} {
+    --fq-bg: {{ section_bg }};
+    --fq-eyebrow-color: {{ s.eyebrow_color }};
+    --fq-heading-color: {{ s.heading_color }};
+    --fq-sub-color: {{ s.subheading_color }};
+    --fq-q-color: {{ s.question_color }};
+    --fq-q-hover: {{ s.question_hover_color }};
+    --fq-q-active: {{ s.question_active_color }};
+    --fq-a-color: {{ s.answer_color }};
+    --fq-link: {{ s.link_color }};
+    --fq-item-bg: {{ item_bg }};
+    --fq-item-active-bg: {{ s.item_active_bg }};
+    --fq-border: {{ s.border_color }};
+    --fq-border-active: {{ s.border_active_color }};
+    --fq-icon: {{ s.icon_color }};
+    --fq-icon-active: {{ s.icon_active_color }};
+    --fq-icon-bg: {{ s.icon_bg_color }};
+    --fq-number: {{ s.number_color }};
+    --fq-accent-1: {{ s.accent_1 }};
+    --fq-accent-2: {{ s.accent_2 }};
+    --fq-control-bg: {{ s.control_bg }};
+    --fq-control-text: {{ s.control_text }};
+    --fq-control-border: {{ s.control_border }};
+    --fq-tab-active-bg: {{ s.tab_active_bg }};
+    --fq-tab-active-text: {{ s.tab_active_text }};
+    --fq-cta-bg: {{ s.cta_bg }};
+    --fq-cta-heading: {{ s.cta_heading_color }};
+    --fq-cta-text: {{ s.cta_text_color }};
+    --fq-btn-bg: {{ s.cta_button_bg }};
+    --fq-btn-text: {{ s.cta_button_text_color }};
+    --fq-effect: {{ effect_color }};
+
+    --fq-radius: {{ s.radius }}px;
+    --fq-border-width: {{ s.border_width }}px;
+    --fq-blur: {{ s.glass_blur }}px;
+    --fq-icon-size: {{ s.icon_size }}px;
+    --fq-icon-box: calc({{ s.icon_size }}px + {{ s.icon_padding }}px * 2);
+    --fq-speed: {{ s.open_speed }}ms;
+    --fq-stagger: {{ s.stagger }}ms;
+    --fq-header-gap: {{ s.header_spacing }}px;
+    --fq-max-width: {{ s.max_width }}px;
+    --fq-list-width: {{ s.list_max_width }}px;
+    --fq-aside-width: {{ s.split_ratio }}%;
+    --fq-line-height: {{ s.line_height }};
+    --fq-heading-weight: {{ s.heading_weight }};
+    --fq-heading-ls: {{ s.heading_letter_spacing }}px;
+    --fq-q-weight: {{ s.question_weight }};
+    --fq-eyebrow-size: {{ s.eyebrow_size }}px;
+    --fq-cta-radius: {{ s.cta_radius }}px;
+    --fq-btn-radius: {{ s.cta_button_radius }}px;
+
+    /* Desktop values (overridden on mobile) */
+    --fq-pt: {{ s.padding_top }}px;
+    --fq-pb: {{ s.padding_bottom }}px;
+    --fq-side: {{ s.side_padding }}px;
+    --fq-gap: {{ s.item_gap }}px;
+    --fq-col-gap: {{ s.column_gap }}px;
+    --fq-q-pad-y: {{ s.question_padding_y }}px;
+    --fq-q-pad-x: {{ s.question_padding_x }}px;
+    --fq-heading-size: {{ s.heading_size }}px;
+    --fq-sub-size: {{ s.subheading_size }}px;
+    --fq-q-size: {{ s.question_size }}px;
+    --fq-a-size: {{ s.answer_size }}px;
+  }
+
+  /* ---------- Section ---------- */
+  #FaqAccordion-{{ section.id }} {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--fq-bg);
+    padding-top: var(--fq-pt);
+    padding-bottom: var(--fq-pb);
+    font-family: {{ body_font.family }}, {{ body_font.fallback_families }};
+    font-style: {{ body_font.style }};
+    line-height: var(--fq-line-height);
+  }
+
+  #FaqAccordion-{{ section.id }} *,
+  #FaqAccordion-{{ section.id }} *::before,
+  #FaqAccordion-{{ section.id }} *::after {
+    box-sizing: border-box;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__inner {
+    position: relative;
+    z-index: 1;
+    max-width: var(--fq-max-width);
+    margin: 0 auto;
+    padding-left: var(--fq-side);
+    padding-right: var(--fq-side);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--full .fq__inner {
+    max-width: none;
+  }
+
+  /* ---------- Background effects ---------- */
+  #FaqAccordion-{{ section.id }} .fq__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__bg--grid {
+    background-image:
+      linear-gradient(var(--fq-effect) 1px, transparent 1px),
+      linear-gradient(90deg, var(--fq-effect) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__bg--dots {
+    background-image: radial-gradient(var(--fq-effect) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__bg--glow {
+    background:
+      radial-gradient(40% 50% at 10% 15%, color-mix(in srgb, var(--fq-accent-1) 35%, transparent), transparent 70%),
+      radial-gradient(40% 50% at 90% 85%, color-mix(in srgb, var(--fq-accent-2) 30%, transparent), transparent 70%);
+    opacity: calc({{ s.effect_strength }} / 20);
+    filter: blur(20px);
+  }
+
+  /* ---------- Layouts ---------- */
+  #FaqAccordion-{{ section.id }}.fq--layout-centered .fq__main,
+  #FaqAccordion-{{ section.id }}.fq--layout-centered .fq__aside {
+    max-width: var(--fq-list-width);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-split .fq__inner {
+    display: grid;
+    grid-template-columns: minmax(0, var(--fq-aside-width)) minmax(0, 1fr);
+    gap: var(--fq-col-gap);
+    align-items: start;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-split.fq--sticky .fq__aside-inner {
+    position: sticky;
+    top: {{ s.sticky_offset }}px;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-two_column .fq__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--fq-col-gap);
+    align-items: start;
+  }
+
+  /* ---------- Header ---------- */
+  #FaqAccordion-{{ section.id }} .fq__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: var(--fq-header-gap);
+    text-align: {{ s.heading_align }};
+    {% case s.heading_align %}
+      {% when 'center' %}align-items: center;
+      {% when 'right' %}align-items: flex-end;
+      {% else %}align-items: flex-start;
+    {% endcase %}
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-split .fq__aside-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fq-header-gap);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-split .fq__header {
+    margin-bottom: 0;
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__eyebrow {
+    margin: 0;
+    color: var(--fq-eyebrow-color);
+    font-size: var(--fq-eyebrow-size);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__heading {
+    margin: 0;
+    max-width: 24ch;
+    color: var(--fq-heading-color);
+    font-family: {{ heading_font.family }}, {{ heading_font.fallback_families }};
+    font-style: {{ heading_font.style }};
+    font-size: var(--fq-heading-size);
+    font-weight: var(--fq-heading-weight);
+    letter-spacing: var(--fq-heading-ls);
+    line-height: 1.1;
+    text-transform: {{ s.heading_transform }};
+    text-wrap: balance;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--highlight-gradient .fq__heading em,
+  #FaqAccordion-{{ section.id }}.fq--highlight-gradient .fq__heading i {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--fq-accent-1), var(--fq-accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--highlight-accent .fq__heading em,
+  #FaqAccordion-{{ section.id }}.fq--highlight-accent .fq__heading i {
+    font-style: normal;
+    color: var(--fq-accent-1);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__subheading {
+    max-width: 60ch;
+    color: var(--fq-sub-color);
+    font-size: var(--fq-sub-size);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__subheading p {
+    margin: 0;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__subheading a {
+    color: var(--fq-link);
+  }
+
+  /* ---------- Search + tabs ---------- */
+  #FaqAccordion-{{ section.id }} .fq__tools {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+    {% if s.layout == 'split' or s.heading_align == 'left' %}
+      align-items: stretch;
+    {% else %}
+      align-items: center;
+    {% endif %}
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__search {
+    position: relative;
+    width: 100%;
+    max-width: {% if s.layout == 'split' %}none{% else %}560px{% endif %};
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__search-icon {
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--fq-control-text);
+    opacity: 0.6;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__search-input {
+    width: 100%;
+    height: 52px;
+    margin: 0;
+    padding: 0 20px 0 48px;
+    border: 1px solid var(--fq-control-border);
+    border-radius: 999px;
+    background: var(--fq-control-bg);
+    color: var(--fq-control-text);
+    font: inherit;
+    font-size: 15px;
+    outline: none;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__search-input::placeholder {
+    color: var(--fq-control-text);
+    opacity: 0.55;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__search-input:focus {
+    border-color: var(--fq-accent-1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--fq-accent-1) 18%, transparent);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    {% if s.layout == 'split' or s.heading_align == 'left' %}
+      justify-content: flex-start;
+    {% else %}
+      justify-content: center;
+    {% endif %}
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__tab {
+    margin: 0;
+    padding: 9px 18px;
+    border: 1px solid var(--fq-control-border);
+    border-radius: 999px;
+    background: var(--fq-control-bg);
+    color: var(--fq-control-text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__tab:hover {
+    border-color: var(--fq-accent-1);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__tab.is-active {
+    border-color: var(--fq-tab-active-bg);
+    background: var(--fq-tab-active-bg);
+    color: var(--fq-tab-active-text);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__tab:focus-visible,
+  #FaqAccordion-{{ section.id }} .fq__question:focus-visible,
+  #FaqAccordion-{{ section.id }} .fq__cta-button:focus-visible {
+    outline: 2px solid var(--fq-accent-1);
+    outline-offset: 2px;
+  }
+
+  /* ---------- List + items ---------- */
+  #FaqAccordion-{{ section.id }} .fq__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fq-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-two_column .fq__list {
+    row-gap: var(--fq-gap);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__item {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--fq-radius);
+    scroll-margin-top: 100px;
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease,
+      transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__item[hidden] {
+    display: none;
+  }
+
+  /* Cards */
+  #FaqAccordion-{{ section.id }}.fq--style-cards .fq__item {
+    background: var(--fq-item-bg);
+    border: var(--fq-border-width) solid var(--fq-border);
+  }
+
+  /* Glass */
+  #FaqAccordion-{{ section.id }}.fq--style-glass .fq__item {
+    background: var(--fq-item-bg);
+    border: var(--fq-border-width) solid var(--fq-border);
+    -webkit-backdrop-filter: blur(var(--fq-blur)) saturate(140%);
+    backdrop-filter: blur(var(--fq-blur)) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-cards .fq__item.is-open,
+  #FaqAccordion-{{ section.id }}.fq--style-glass .fq__item.is-open {
+    background: var(--fq-item-active-bg);
+    border-color: var(--fq-border-active);
+  }
+
+  /* Boxed: one box, dividers between questions */
+  #FaqAccordion-{{ section.id }}.fq--style-boxed .fq__list {
+    gap: 0;
+    overflow: hidden;
+    border: var(--fq-border-width) solid var(--fq-border);
+    border-radius: var(--fq-radius);
+    background: var(--fq-item-bg);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-boxed .fq__item {
+    border-radius: 0;
+    border-top: var(--fq-border-width) solid var(--fq-border);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-boxed .fq__item:first-child,
+  #FaqAccordion-{{ section.id }}.fq--style-boxed .fq__item.is-first-visible {
+    border-top: 0;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-boxed .fq__item.is-open {
+    background: var(--fq-item-active-bg);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-boxed.fq--layout-two_column .fq__list {
+    column-gap: 0;
+    align-items: stretch;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-boxed.fq--layout-two_column .fq__item.is-first-row {
+    border-top: 0;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-boxed.fq--layout-two_column .fq__item.is-right {
+    border-left: var(--fq-border-width) solid var(--fq-border);
+  }
+
+  /* Lines */
+  #FaqAccordion-{{ section.id }}.fq--style-lines .fq__list {
+    gap: 0;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-lines .fq__item {
+    border-radius: 0;
+    border-bottom: max(var(--fq-border-width), 1px) solid var(--fq-border);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-lines.fq--layout-two_column .fq__list {
+    column-gap: var(--fq-col-gap);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-lines .fq__item.is-open {
+    border-bottom-color: var(--fq-border-active);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-lines .fq__question,
+  #FaqAccordion-{{ section.id }}.fq--style-minimal .fq__question {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--style-lines .fq__panel-inner,
+  #FaqAccordion-{{ section.id }}.fq--style-minimal .fq__panel-inner {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Minimal */
+  #FaqAccordion-{{ section.id }}.fq--style-minimal .fq__item {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* Shadows (cards + glass) */
+  #FaqAccordion-{{ section.id }}.fq--shadow-soft.fq--style-cards .fq__item,
+  #FaqAccordion-{{ section.id }}.fq--shadow-soft.fq--style-glass .fq__item,
+  #FaqAccordion-{{ section.id }}.fq--shadow-soft.fq--style-boxed .fq__list {
+    box-shadow: 0 1px 2px rgba(16, 16, 32, 0.04), 0 8px 24px rgba(16, 16, 32, 0.06);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--shadow-medium.fq--style-cards .fq__item,
+  #FaqAccordion-{{ section.id }}.fq--shadow-medium.fq--style-glass .fq__item,
+  #FaqAccordion-{{ section.id }}.fq--shadow-medium.fq--style-boxed .fq__list {
+    box-shadow: 0 2px 6px rgba(16, 16, 32, 0.06), 0 16px 40px rgba(16, 16, 32, 0.10);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--shadow-open.fq--style-cards .fq__item.is-open,
+  #FaqAccordion-{{ section.id }}.fq--shadow-open.fq--style-glass .fq__item.is-open {
+    box-shadow: 0 2px 6px rgba(16, 16, 32, 0.05), 0 18px 44px rgba(16, 16, 32, 0.10);
+  }
+
+  /* Active indicator */
+  #FaqAccordion-{{ section.id }}.fq--active-bar .fq__item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    width: 3px;
+    background: linear-gradient(180deg, var(--fq-accent-1), var(--fq-accent-2));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--active-bar .fq__item.is-open::before {
+    transform: scaleY(1);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--active-bar.fq--style-lines .fq__question,
+  #FaqAccordion-{{ section.id }}.fq--active-bar.fq--style-minimal .fq__question,
+  #FaqAccordion-{{ section.id }}.fq--active-bar.fq--style-lines .fq__panel-inner,
+  #FaqAccordion-{{ section.id }}.fq--active-bar.fq--style-minimal .fq__panel-inner {
+    padding-left: 18px;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--active-glow:not(.fq--style-boxed):not(.fq--style-lines):not(.fq--style-minimal) .fq__item.is-open {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--fq-accent-1) 35%, transparent),
+      0 14px 40px color-mix(in srgb, var(--fq-accent-1) 22%, transparent);
+  }
+
+  @media (hover: hover) {
+    #FaqAccordion-{{ section.id }}.fq--hover-lift.fq--style-cards .fq__item:hover,
+    #FaqAccordion-{{ section.id }}.fq--hover-lift.fq--style-glass .fq__item:hover {
+      transform: translateY(-2px);
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--style-cards .fq__item:not(.is-open):hover,
+    #FaqAccordion-{{ section.id }}.fq--style-glass .fq__item:not(.is-open):hover {
+      border-color: var(--fq-border-active);
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__question:hover {
+      color: var(--fq-q-hover);
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__question:hover .fq__icon {
+      color: var(--fq-icon-active);
+    }
+  }
+
+  /* ---------- Question ---------- */
+  #FaqAccordion-{{ section.id }} .fq__q-wrap {
+    margin: 0;
+    font: inherit;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__question {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin: 0;
+    padding: var(--fq-q-pad-y) var(--fq-q-pad-x);
+    border: 0;
+    background: none;
+    color: var(--fq-q-color);
+    font: inherit;
+    font-size: var(--fq-q-size);
+    font-weight: var(--fq-q-weight);
+    line-height: 1.35;
+    letter-spacing: {{ s.question_letter_spacing }}px;
+    text-align: left;
+    text-transform: {{ s.question_transform }};
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.25s ease;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__item.is-open .fq__question {
+    color: var(--fq-q-active);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-pos-left .fq__icon {
+    order: -1;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-pos-left .fq__number {
+    order: -2;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__q-text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__number {
+    flex-shrink: 0;
+    min-width: 2ch;
+    color: var(--fq-number);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    opacity: 0.9;
+  }
+
+  /* ---------- Icon ---------- */
+  #FaqAccordion-{{ section.id }} .fq__icon {
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--fq-icon-box);
+    height: var(--fq-icon-box);
+    border-radius: 999px;
+    color: var(--fq-icon);
+    transition:
+      color 0.3s ease,
+      background 0.3s ease,
+      transform var(--fq-speed) cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-none .fq__icon {
+    width: var(--fq-icon-size);
+    height: var(--fq-icon-size);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-soft .fq__icon {
+    background: color-mix(in srgb, var(--fq-icon) 12%, transparent);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-solid .fq__icon {
+    background: var(--fq-icon-bg);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-outline .fq__icon {
+    border: 1.5px solid color-mix(in srgb, var(--fq-icon) 35%, transparent);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-gradient .fq__item.is-open .fq__icon,
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-gradient .fq__icon {
+    background: color-mix(in srgb, var(--fq-icon) 10%, transparent);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-bg-gradient .fq__item.is-open .fq__icon {
+    background: linear-gradient(135deg, var(--fq-accent-1), var(--fq-accent-2));
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__item.is-open .fq__icon {
+    color: var(--fq-icon-active);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__icon svg {
+    width: var(--fq-icon-size);
+    height: var(--fq-icon-size);
+  }
+
+  /* Plus / minus bars */
+  #FaqAccordion-{{ section.id }} .fq__plus {
+    position: relative;
+    width: calc(var(--fq-icon-size) * 0.7);
+    height: calc(var(--fq-icon-size) * 0.7);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__plus span {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform var(--fq-speed) cubic-bezier(0.2, 0.8, 0.2, 1), opacity var(--fq-speed) ease;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__plus span:last-child {
+    transform: rotate(90deg);
+  }
+
+  /* plus → minus */
+  #FaqAccordion-{{ section.id }}.fq--icon-plus .fq__item.is-open .fq__plus span:last-child {
+    transform: rotate(0deg);
+    opacity: 0;
+  }
+
+  /* plus → × */
+  #FaqAccordion-{{ section.id }}.fq--icon-plus_rotate .fq__item.is-open .fq__icon {
+    transform: rotate(135deg);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--icon-chevron .fq__item.is-open .fq__icon,
+  #FaqAccordion-{{ section.id }}.fq--icon-arrow .fq__item.is-open .fq__icon {
+    transform: rotate(180deg);
+  }
+
+  /* ---------- Answer panel (smooth height) ---------- */
+  #FaqAccordion-{{ section.id }} .fq__panel {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows var(--fq-speed) cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--ready .fq__item:not(.is-open) .fq__panel {
+    grid-template-rows: 0fr;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__panel-inner {
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 var(--fq-q-pad-x);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__answer {
+    padding-bottom: var(--fq-q-pad-y);
+    color: var(--fq-a-color);
+    font-size: var(--fq-a-size);
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--fq-speed) ease,
+      transform var(--fq-speed) cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--ready .fq__item:not(.is-open) .fq__answer {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  {% if s.show_numbers and s.indent_answer %}
+    #FaqAccordion-{{ section.id }}.fq--icon-pos-right .fq__answer {
+      padding-left: calc(2ch + 16px);
+    }
+  {% endif %}
+
+  {% if s.icon_position == 'left' and s.indent_answer %}
+    #FaqAccordion-{{ section.id }}.fq--icon-pos-left .fq__answer {
+      padding-left: calc(var(--fq-icon-box) + 16px{% if s.show_numbers %} + 2ch + 16px{% endif %});
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--icon-pos-left.fq--icon-bg-none .fq__answer {
+      padding-left: calc(var(--fq-icon-size) + 16px{% if s.show_numbers %} + 2ch + 16px{% endif %});
+    }
+  {% endif %}
+
+  #FaqAccordion-{{ section.id }} .fq__answer > :first-child {
+    margin-top: 0;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__answer > :last-child {
+    margin-bottom: 0;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__answer p {
+    margin: 0 0 0.8em;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__answer ul,
+  #FaqAccordion-{{ section.id }} .fq__answer ol {
+    margin: 0 0 0.8em;
+    padding-left: 1.25em;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__answer a {
+    color: var(--fq-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__empty {
+    margin: 24px 0 0;
+    color: var(--fq-a-color);
+    font-size: var(--fq-a-size);
+    text-align: center;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__empty[hidden] {
+    display: none;
+  }
+
+  /* ---------- CTA card ---------- */
+  #FaqAccordion-{{ section.id }} .fq__cta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: {{ s.cta_padding }}px;
+    border-radius: var(--fq-cta-radius);
+    background: var(--fq-cta-bg);
+    {% if s.cta_border %}
+      border: var(--fq-border-width) solid var(--fq-border);
+    {% endif %}
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--layout-split .fq__cta {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  #FaqAccordion-{{ section.id }}:not(.fq--layout-split) .fq__cta {
+    align-items: center;
+    margin-top: {{ s.cta_spacing }}px;
+    text-align: center;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__cta-heading {
+    margin: 0;
+    color: var(--fq-cta-heading);
+    font-family: {{ heading_font.family }}, {{ heading_font.fallback_families }};
+    font-size: calc(var(--fq-q-size) * 1.2);
+    font-weight: var(--fq-heading-weight);
+    line-height: 1.2;
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__cta-text {
+    margin: 0;
+    color: var(--fq-cta-text);
+    font-size: var(--fq-a-size);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__cta-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 13px 24px;
+    border: 1.5px solid transparent;
+    border-radius: var(--fq-btn-radius);
+    color: var(--fq-btn-text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, background-color 0.3s ease;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--btn-solid .fq__cta-button {
+    background: var(--fq-btn-bg);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--btn-gradient .fq__cta-button {
+    background: linear-gradient(135deg, var(--fq-accent-1), var(--fq-accent-2));
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--btn-outline .fq__cta-button {
+    border-color: var(--fq-btn-bg);
+    background: transparent;
+    color: var(--fq-btn-bg);
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__cta-button svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+  }
+
+  @media (hover: hover) {
+    #FaqAccordion-{{ section.id }} .fq__cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--fq-accent-1) 28%, transparent);
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__cta-button:hover svg {
+      transform: translateX(3px);
+    }
+  }
+
+  /* ---------- Entrance animation ---------- */
+  #FaqAccordion-{{ section.id }}.fq--js .fq__header,
+  #FaqAccordion-{{ section.id }}.fq--js .fq__tools,
+  #FaqAccordion-{{ section.id }}.fq--js .fq__cta,
+  #FaqAccordion-{{ section.id }}.fq--js .fq__list .fq__item {
+    opacity: 0;
+    transition:
+      opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      filter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--js .fq__list .fq__item {
+    transition-delay: calc(var(--fq-i, 0) * var(--fq-stagger)), calc(var(--fq-i, 0) * var(--fq-stagger)), calc(var(--fq-i, 0) * var(--fq-stagger)), 0s, 0s, 0s;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-fade_up .fq__header,
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-fade_up .fq__tools,
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-fade_up .fq__cta,
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-fade_up .fq__list .fq__item {
+    transform: translateY(24px);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-blur .fq__header,
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-blur .fq__tools,
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-blur .fq__cta,
+  #FaqAccordion-{{ section.id }}.fq--js.fq--entrance-blur .fq__list .fq__item {
+    filter: blur(10px);
+    transform: translateY(10px);
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--js .fq__header.is-visible,
+  #FaqAccordion-{{ section.id }}.fq--js .fq__tools.is-visible,
+  #FaqAccordion-{{ section.id }}.fq--js .fq__cta.is-visible,
+  #FaqAccordion-{{ section.id }}.fq--js .fq__list.is-visible .fq__item {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  #FaqAccordion-{{ section.id }}.fq--js .fq__list.is-done .fq__item {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease,
+      transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* ---------- Tablet & mobile ---------- */
+  @media screen and (max-width: 989px) {
+    #FaqAccordion-{{ section.id }}.fq--layout-split .fq__inner {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--layout-split .fq__aside-inner {
+      position: static;
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--layout-split .fq__aside {
+      margin-bottom: var(--fq-header-gap);
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--layout-split .fq__cta {
+      display: none;
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--layout-split .fq__cta--mobile {
+      display: flex;
+      align-items: center;
+      margin-top: {{ s.cta_spacing }}px;
+      text-align: center;
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--layout-split .fq__header {
+      text-align: {{ s.heading_align }};
+      {% case s.heading_align %}
+        {% when 'center' %}align-items: center;
+        {% when 'right' %}align-items: flex-end;
+        {% else %}align-items: flex-start;
+      {% endcase %}
+    }
+  }
+
+  #FaqAccordion-{{ section.id }} .fq__cta--mobile {
+    display: none;
+  }
+
+  @media screen and (max-width: 749px) {
+    #FaqAccordion-{{ section.id }} {
+      --fq-pt: {{ s.padding_top_mobile }}px;
+      --fq-pb: {{ s.padding_bottom_mobile }}px;
+      --fq-side: {{ s.side_padding_mobile }}px;
+      --fq-gap: {{ s.item_gap_mobile }}px;
+      --fq-q-pad-y: {{ s.question_padding_y_mobile }}px;
+      --fq-q-pad-x: {{ s.question_padding_x_mobile }}px;
+      --fq-heading-size: {{ s.heading_size_mobile }}px;
+      --fq-sub-size: {{ s.subheading_size_mobile }}px;
+      --fq-q-size: {{ s.question_size_mobile }}px;
+      --fq-a-size: {{ s.answer_size_mobile }}px;
+      --fq-header-gap: calc({{ s.header_spacing }}px * 0.75);
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--layout-two_column .fq__list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__question {
+      gap: 12px;
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__tabs {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      width: calc(100% + var(--fq-side) * 2);
+      margin-left: calc(var(--fq-side) * -1);
+      margin-right: calc(var(--fq-side) * -1);
+      padding: 0 var(--fq-side) 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__tab {
+      flex-shrink: 0;
+    }
+
+    #FaqAccordion-{{ section.id }} .fq__search-input {
+      height: 48px;
+      font-size: 16px;
+    }
+  }
+
+  /* ---------- Reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    #FaqAccordion-{{ section.id }} *,
+    #FaqAccordion-{{ section.id }} *::before,
+    #FaqAccordion-{{ section.id }} *::after {
+      transition-duration: 0.01ms !important;
+      animation: none !important;
+    }
+
+    #FaqAccordion-{{ section.id }}.fq--js .fq__header,
+    #FaqAccordion-{{ section.id }}.fq--js .fq__tools,
+    #FaqAccordion-{{ section.id }}.fq--js .fq__cta,
+    #FaqAccordion-{{ section.id }}.fq--js .fq__item {
+      opacity: 1 !important;
+      transform: none !important;
+      filter: none !important;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    var root = document.getElementById('FaqAccordion-{{ section.id }}');
+
+    if (!root) {
+      return;
+    }
+
+    var single = root.getAttribute('data-single') === 'true';
+    var items = Array.prototype.slice.call(root.querySelectorAll('.fq__item'));
+    var list = root.querySelector('.fq__list');
+    var searchInput = root.querySelector('.fq__search-input');
+    var tabs = Array.prototype.slice.call(root.querySelectorAll('.fq__tab'));
+    var emptyMessage = root.querySelector('.fq__empty');
+    var activeCategory = 'all';
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var inEditor = window.Shopify && window.Shopify.designMode;
+
+    function setOpen(item, open) {
+      var button = item.querySelector('.fq__question');
+      var panel = item.querySelector('.fq__panel');
+
+      item.classList.toggle('is-open', open);
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+      if (open) {
+        panel.removeAttribute('inert');
+      } else {
+        panel.setAttribute('inert', '');
+      }
+    }
+
+    function openItem(item) {
+      if (single) {
+        items.forEach(function (other) {
+          if (other !== item && other.classList.contains('is-open')) {
+            setOpen(other, false);
+          }
+        });
+      }
+      setOpen(item, true);
+    }
+
+    /* Initial state: closed answers are hidden from keyboard/screen readers */
+    items.forEach(function (item) {
+      setOpen(item, item.classList.contains('is-open'));
+
+      item.querySelector('.fq__question').addEventListener('click', function () {
+        if (item.classList.contains('is-open')) {
+          setOpen(item, false);
+        } else {
+          openItem(item);
+        }
+      });
+    });
+
+    /* Turn on the collapsed styling only once JavaScript is running */
+    root.classList.add('fq--ready');
+
+    /* ---------- Filtering (tabs + search) ---------- */
+    function normalize(text) {
+      return (text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    items.forEach(function (item) {
+      item._fqText = normalize(item.textContent);
+    });
+
+    function applyFilters() {
+      var query = searchInput ? normalize(searchInput.value) : '';
+      var visibleCount = 0;
+      var firstVisible = null;
+
+      var columns =
+        root.classList.contains('fq--layout-two_column') &&
+        window.matchMedia('(min-width: 750px)').matches ? 2 : 1;
+
+      items.forEach(function (item) {
+        item.classList.remove('is-first-row', 'is-right');
+
+        var matchesCategory =
+          activeCategory === 'all' ||
+          item.getAttribute('data-category') === activeCategory;
+        var matchesQuery = !query || item._fqText.indexOf(query) !== -1;
+        var show = matchesCategory && matchesQuery;
+
+        item.hidden = !show;
+        item.classList.remove('is-first-visible');
+
+        if (show) {
+          if (visibleCount < columns) {
+            item.classList.add('is-first-row');
+          }
+          if (columns === 2 && visibleCount % 2 === 1) {
+            item.classList.add('is-right');
+          }
+          visibleCount++;
+          if (!firstVisible) {
+            firstVisible = item;
+          }
+        }
+      });
+
+      if (firstVisible) {
+        firstVisible.classList.add('is-first-visible');
+      }
+
+      if (list) {
+        list.hidden = visibleCount === 0;
+      }
+
+      if (emptyMessage) {
+        emptyMessage.hidden = visibleCount !== 0;
+      }
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        activeCategory = tab.getAttribute('data-category');
+
+        tabs.forEach(function (other) {
+          var isActive = other === tab;
+          other.classList.toggle('is-active', isActive);
+          other.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        applyFilters();
+      });
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener('input', applyFilters);
+    }
+
+    applyFilters();
+
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(applyFilters, 150);
+    }, { passive: true });
+
+    /* ---------- Deep link: yourstore.com/pages/faq#question-handle ---------- */
+    function openFromHash() {
+      if (!window.location.hash) {
+        return;
+      }
+
+      var id = decodeURIComponent(window.location.hash.slice(1));
+      var target = document.getElementById(id);
+
+      if (target && root.contains(target) && target.classList.contains('fq__item')) {
+        openItem(target);
+        setTimeout(function () {
+          target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+        }, 150);
+      }
+    }
+
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
+
+    /* ---------- Theme editor: open the question you click in the sidebar ---------- */
+    document.addEventListener('shopify:block:select', function (event) {
+      if (root.contains(event.target) && event.target.classList.contains('fq__item')) {
+        openItem(event.target);
+      }
+    });
+
+    /* ---------- Entrance animation ---------- */
+    var entrance = root.getAttribute('data-entrance');
+
+    if (
+      entrance &&
+      entrance !== 'none' &&
+      !reducedMotion &&
+      !inEditor &&
+      'IntersectionObserver' in window
+    ) {
+      root.classList.add('fq--js');
+
+      var stagger = parseInt(root.getAttribute('data-stagger'), 10) || 0;
+
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) {
+              return;
+            }
+
+            var el = entry.target;
+            el.classList.add('is-visible');
+            observer.unobserve(el);
+
+            if (el.classList.contains('fq__list')) {
+              setTimeout(function () {
+                el.classList.add('is-done');
+              }, 900 + items.length * stagger);
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      root.querySelectorAll('.fq__reveal').forEach(function (el) {
+        observer.observe(el);
+      });
+    }
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "FAQ Accordion",
+  "tag": "div",
+  "class": "faq-accordion-section",
+  "max_blocks": 50,
+
+  "settings": [
+
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "options": [
+        { "value": "centered", "label": "Centered" },
+        { "value": "split", "label": "Split (heading beside questions)" },
+        { "value": "two_column", "label": "Two columns of questions" }
+      ],
+      "default": "centered"
+    },
+    {
+      "type": "range",
+      "id": "split_ratio",
+      "label": "Heading column width (Split)",
+      "min": 25,
+      "max": 50,
+      "step": 1,
+      "unit": "%",
+      "default": 36
+    },
+    {
+      "type": "checkbox",
+      "id": "sticky_header",
+      "label": "Sticky heading while scrolling (Split)",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "sticky_offset",
+      "label": "Sticky distance from top",
+      "info": "Increase if your theme has a sticky header.",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "list_max_width",
+      "label": "Max width of questions (Centered)",
+      "min": 500,
+      "max": 1200,
+      "step": 20,
+      "unit": "px",
+      "default": 820
+    },
+
+    {
+      "type": "header",
+      "content": "Behavior"
+    },
+    {
+      "type": "checkbox",
+      "id": "open_first",
+      "label": "Open first question by default",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "close_others",
+      "label": "Only one answer open at a time",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "open_speed",
+      "label": "Open / close speed",
+      "min": 150,
+      "max": 800,
+      "step": 50,
+      "unit": "ms",
+      "default": 400
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_schema",
+      "label": "Add FAQ schema for Google",
+      "info": "Helps Google understand your FAQs. Use it on one FAQ section per page.",
+      "default": true
+    },
+
+    {
+      "type": "header",
+      "content": "Search & topic tabs"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_search",
+      "label": "Show search bar",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "search_placeholder",
+      "label": "Search placeholder",
+      "default": "Search questions…"
+    },
+    {
+      "type": "text",
+      "id": "no_results_text",
+      "label": "No results message",
+      "default": "No questions match your search. Try another word."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_tabs",
+      "label": "Show topic tabs",
+      "info": "Tabs are created from each question's Topic field.",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "all_tab_label",
+      "label": "\"All\" tab label",
+      "default": "All"
+    },
+    {
+      "type": "text",
+      "id": "tabs_label",
+      "label": "Tabs label for screen readers",
+      "default": "Filter by topic"
+    },
+
+    {
+      "type": "header",
+      "content": "Section heading"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Small text above heading",
+      "default": "FAQ"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "info": "Make a word italic to highlight it (see Highlight style).",
+      "default": "Questions? We've got <em>answers</em>"
+    },
+    {
+      "type": "richtext",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "<p>Everything you need to know about orders, shipping and returns.</p>"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Heading tag (SEO)",
+      "options": [
+        { "value": "h2", "label": "H2" },
+        { "value": "h1", "label": "H1" },
+        { "value": "h3", "label": "H3" },
+        { "value": "p", "label": "Paragraph" }
+      ],
+      "default": "h2"
+    },
+    {
+      "type": "select",
+      "id": "heading_align",
+      "label": "Heading alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "heading_highlight",
+      "label": "Highlight style for italic words",
+      "options": [
+        { "value": "gradient", "label": "Gradient text" },
+        { "value": "accent", "label": "Accent color" },
+        { "value": "none", "label": "Keep italic" }
+      ],
+      "default": "gradient"
+    },
+    {
+      "type": "range",
+      "id": "header_spacing",
+      "label": "Space below heading",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+
+    {
+      "type": "header",
+      "content": "Heading typography"
+    },
+    {
+      "type": "font_picker",
+      "id": "heading_font",
+      "label": "Heading font",
+      "default": "roboto_n4"
+    },
+    {
+      "type": "select",
+      "id": "heading_weight",
+      "label": "Heading weight",
+      "options": [
+        { "value": "400", "label": "Regular" },
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" },
+        { "value": "800", "label": "Extra bold" }
+      ],
+      "default": "700"
+    },
+    {
+      "type": "select",
+      "id": "heading_transform",
+      "label": "Heading text transform",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "uppercase", "label": "Uppercase" },
+        { "value": "capitalize", "label": "Capitalize" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Desktop heading size",
+      "min": 18,
+      "max": 72,
+      "step": 1,
+      "unit": "px",
+      "default": 42
+    },
+    {
+      "type": "range",
+      "id": "heading_size_mobile",
+      "label": "Mobile heading size",
+      "min": 16,
+      "max": 48,
+      "step": 1,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "heading_letter_spacing",
+      "label": "Heading letter spacing",
+      "min": -3,
+      "max": 3,
+      "step": 0.5,
+      "unit": "px",
+      "default": -1
+    },
+    {
+      "type": "range",
+      "id": "eyebrow_size",
+      "label": "Small text size",
+      "min": 10,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 13
+    },
+    {
+      "type": "range",
+      "id": "subheading_size",
+      "label": "Desktop subheading size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 17
+    },
+    {
+      "type": "range",
+      "id": "subheading_size_mobile",
+      "label": "Mobile subheading size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+
+    {
+      "type": "header",
+      "content": "Question & answer typography"
+    },
+    {
+      "type": "font_picker",
+      "id": "body_font",
+      "label": "Question & answer font",
+      "default": "roboto_n4"
+    },
+    {
+      "type": "select",
+      "id": "question_weight",
+      "label": "Question weight",
+      "options": [
+        { "value": "400", "label": "Regular" },
+        { "value": "500", "label": "Medium" },
+        { "value": "600", "label": "Semi bold" },
+        { "value": "700", "label": "Bold" }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "select",
+      "id": "question_transform",
+      "label": "Question text transform",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "uppercase", "label": "Uppercase" },
+        { "value": "capitalize", "label": "Capitalize" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "question_letter_spacing",
+      "label": "Question letter spacing",
+      "min": -1,
+      "max": 3,
+      "step": 0.5,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "question_size",
+      "label": "Desktop question size",
+      "min": 13,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "question_size_mobile",
+      "label": "Mobile question size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "answer_size",
+      "label": "Desktop answer size",
+      "min": 12,
+      "max": 22,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "answer_size_mobile",
+      "label": "Mobile answer size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "unit": "px",
+      "default": 15
+    },
+    {
+      "type": "range",
+      "id": "line_height",
+      "label": "Answer line height",
+      "min": 1.2,
+      "max": 2,
+      "step": 0.1,
+      "default": 1.6
+    },
+
+    {
+      "type": "header",
+      "content": "Item design"
+    },
+    {
+      "type": "select",
+      "id": "item_style",
+      "label": "Item style",
+      "options": [
+        { "value": "cards", "label": "Separate cards" },
+        { "value": "boxed", "label": "One box with dividers" },
+        { "value": "lines", "label": "Lines only" },
+        { "value": "glass", "label": "Glass (frosted)" },
+        { "value": "minimal", "label": "Minimal" }
+      ],
+      "default": "cards"
+    },
+    {
+      "type": "select",
+      "id": "active_indicator",
+      "label": "Open question highlight",
+      "options": [
+        { "value": "bar", "label": "Gradient side bar" },
+        { "value": "glow", "label": "Accent glow" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "bar"
+    },
+    {
+      "type": "select",
+      "id": "item_shadow",
+      "label": "Shadow",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "soft", "label": "Soft" },
+        { "value": "medium", "label": "Medium" },
+        { "value": "open", "label": "Only on open question" }
+      ],
+      "default": "open"
+    },
+    {
+      "type": "checkbox",
+      "id": "hover_lift",
+      "label": "Lift on hover",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "label": "Border width",
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "glass_blur",
+      "label": "Glass blur",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "question_padding_y",
+      "label": "Desktop vertical padding",
+      "min": 6,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 22
+    },
+    {
+      "type": "range",
+      "id": "question_padding_x",
+      "label": "Desktop side padding",
+      "min": 0,
+      "max": 48,
+      "step": 2,
+      "unit": "px",
+      "default": 26
+    },
+    {
+      "type": "range",
+      "id": "question_padding_y_mobile",
+      "label": "Mobile vertical padding",
+      "min": 6,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "question_padding_x_mobile",
+      "label": "Mobile side padding",
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "item_gap",
+      "label": "Desktop space between questions",
+      "info": "Used with Separate cards, Glass and Minimal.",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "item_gap_mobile",
+      "label": "Mobile space between questions",
+      "min": 0,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "default": 10
+    },
+    {
+      "type": "range",
+      "id": "column_gap",
+      "label": "Space between columns",
+      "info": "Used with the Split and Two columns layouts.",
+      "min": 16,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 64
+    },
+
+    {
+      "type": "header",
+      "content": "Icon & numbering"
+    },
+    {
+      "type": "select",
+      "id": "icon_style",
+      "label": "Icon style",
+      "options": [
+        { "value": "plus", "label": "Plus → minus" },
+        { "value": "plus_rotate", "label": "Plus → close (×)" },
+        { "value": "chevron", "label": "Chevron" },
+        { "value": "arrow", "label": "Arrow" }
+      ],
+      "default": "plus"
+    },
+    {
+      "type": "select",
+      "id": "icon_position",
+      "label": "Icon position",
+      "options": [
+        { "value": "right", "label": "Right" },
+        { "value": "left", "label": "Left" }
+      ],
+      "default": "right"
+    },
+    {
+      "type": "select",
+      "id": "icon_background",
+      "label": "Icon background",
+      "options": [
+        { "value": "soft", "label": "Soft tint circle" },
+        { "value": "gradient", "label": "Gradient when open" },
+        { "value": "solid", "label": "Solid circle" },
+        { "value": "outline", "label": "Outline ring" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "gradient"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon size",
+      "min": 12,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 18
+    },
+    {
+      "type": "range",
+      "id": "icon_padding",
+      "label": "Icon background padding",
+      "min": 0,
+      "max": 16,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "checkbox",
+      "id": "show_numbers",
+      "label": "Show question numbers (01, 02…)",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "indent_answer",
+      "label": "Line up answers with question text",
+      "info": "Used with numbers or a left icon.",
+      "default": true
+    },
+
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color_background",
+      "id": "background_gradient",
+      "label": "Background gradient",
+      "info": "Overrides the background color when set."
+    },
+    {
+      "type": "color",
+      "id": "eyebrow_color",
+      "label": "Small text color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "subheading_color",
+      "label": "Subheading color",
+      "default": "#6B6B78"
+    },
+    {
+      "type": "color",
+      "id": "question_color",
+      "label": "Question color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "question_hover_color",
+      "label": "Question hover color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "question_active_color",
+      "label": "Open question color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "answer_color",
+      "label": "Answer color",
+      "default": "#5B5B68"
+    },
+    {
+      "type": "color",
+      "id": "link_color",
+      "label": "Link color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "item_bg",
+      "label": "Item background",
+      "default": "#F6F6FA"
+    },
+    {
+      "type": "range",
+      "id": "item_opacity",
+      "label": "Item background opacity",
+      "info": "Use 5–15% with the Glass style on dark backgrounds.",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "item_active_bg",
+      "label": "Open item background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border color",
+      "default": "#ECECF2"
+    },
+    {
+      "type": "color",
+      "id": "border_active_color",
+      "label": "Open / hover border color",
+      "default": "#D9D4FF"
+    },
+    {
+      "type": "color",
+      "id": "icon_color",
+      "label": "Icon color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "icon_active_color",
+      "label": "Open icon color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "icon_bg_color",
+      "label": "Icon background",
+      "info": "Used with the Solid circle background.",
+      "default": "#EEEBFF"
+    },
+    {
+      "type": "color",
+      "id": "number_color",
+      "label": "Number color",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "accent_1",
+      "label": "Accent color 1",
+      "info": "Used for gradients, glows and focus outlines.",
+      "default": "#6D5DFC"
+    },
+    {
+      "type": "color",
+      "id": "accent_2",
+      "label": "Accent color 2",
+      "default": "#FF6B9A"
+    },
+    {
+      "type": "color",
+      "id": "control_bg",
+      "label": "Search & tab background",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "control_text",
+      "label": "Search & tab text",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "control_border",
+      "label": "Search & tab border",
+      "default": "#E4E4EC"
+    },
+    {
+      "type": "color",
+      "id": "tab_active_bg",
+      "label": "Active tab background",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "tab_active_text",
+      "label": "Active tab text",
+      "default": "#FFFFFF"
+    },
+
+    {
+      "type": "header",
+      "content": "\"Still have questions?\" card"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_cta",
+      "label": "Show contact card",
+      "info": "Shows beside the heading in Split layout, below the questions otherwise.",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "cta_heading",
+      "label": "Card heading",
+      "default": "Still have questions?"
+    },
+    {
+      "type": "text",
+      "id": "cta_text",
+      "label": "Card text",
+      "default": "Our team usually replies within a few hours."
+    },
+    {
+      "type": "text",
+      "id": "cta_button_label",
+      "label": "Button label",
+      "default": "Contact us"
+    },
+    {
+      "type": "url",
+      "id": "cta_button_link",
+      "label": "Button link",
+      "info": "Tip: use a WhatsApp link like https://wa.me/91XXXXXXXXXX"
+    },
+    {
+      "type": "select",
+      "id": "cta_button_style",
+      "label": "Button style",
+      "options": [
+        { "value": "gradient", "label": "Accent gradient" },
+        { "value": "solid", "label": "Solid" },
+        { "value": "outline", "label": "Outline" }
+      ],
+      "default": "gradient"
+    },
+    {
+      "type": "color",
+      "id": "cta_bg",
+      "label": "Card background",
+      "default": "#F6F6FA"
+    },
+    {
+      "type": "color",
+      "id": "cta_heading_color",
+      "label": "Card heading color",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "cta_text_color",
+      "label": "Card text color",
+      "default": "#6B6B78"
+    },
+    {
+      "type": "color",
+      "id": "cta_button_bg",
+      "label": "Button color",
+      "info": "Used with Solid and Outline buttons.",
+      "default": "#111118"
+    },
+    {
+      "type": "color",
+      "id": "cta_button_text_color",
+      "label": "Button text color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "checkbox",
+      "id": "cta_border",
+      "label": "Card border",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "cta_radius",
+      "label": "Card corner radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "cta_button_radius",
+      "label": "Button corner radius",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "cta_padding",
+      "label": "Card padding",
+      "min": 12,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "range",
+      "id": "cta_spacing",
+      "label": "Space above card",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+
+    {
+      "type": "header",
+      "content": "Effects"
+    },
+    {
+      "type": "select",
+      "id": "background_effect",
+      "label": "Background effect",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "glow", "label": "Accent glow" },
+        { "value": "grid", "label": "Grid lines" },
+        { "value": "dots", "label": "Dot pattern" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "color",
+      "id": "effect_color",
+      "label": "Pattern color",
+      "info": "Used with Grid lines and Dot pattern.",
+      "default": "#111118"
+    },
+    {
+      "type": "range",
+      "id": "effect_strength",
+      "label": "Background effect strength",
+      "min": 2,
+      "max": 40,
+      "step": 2,
+      "unit": "%",
+      "default": 10
+    },
+    {
+      "type": "select",
+      "id": "entrance_animation",
+      "label": "Scroll-in animation",
+      "info": "Hidden in the theme editor; preview your store to see it.",
+      "options": [
+        { "value": "fade_up", "label": "Fade up" },
+        { "value": "fade", "label": "Fade" },
+        { "value": "blur", "label": "Blur in" },
+        { "value": "none", "label": "None" }
+      ],
+      "default": "fade_up"
+    },
+    {
+      "type": "range",
+      "id": "stagger",
+      "label": "Delay between questions",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "ms",
+      "default": 60
+    },
+
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Full width",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "label": "Content max width",
+      "min": 800,
+      "max": 1800,
+      "step": 20,
+      "unit": "px",
+      "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Desktop top padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 88
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Desktop bottom padding",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 88
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "label": "Mobile top padding",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "label": "Mobile bottom padding",
+      "min": 0,
+      "max": 120,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "side_padding",
+      "label": "Desktop side padding",
+      "min": 0,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "side_padding_mobile",
+      "label": "Mobile side padding",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 16
+    }
+
+  ],
+
+  "blocks": [
+    {
+      "type": "question",
+      "name": "Question",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "Question",
+          "default": "How long does shipping take?"
+        },
+        {
+          "type": "richtext",
+          "id": "answer",
+          "label": "Answer",
+          "default": "<p>Orders ship within 1–2 business days. Delivery usually takes 3–7 business days depending on your location.</p>"
+        },
+        {
+          "type": "text",
+          "id": "category",
+          "label": "Topic (optional)",
+          "info": "Questions with the same topic are grouped into a tab, e.g. Shipping, Returns, Payments."
+        },
+        {
+          "type": "checkbox",
+          "id": "start_open",
+          "label": "Open by default",
+          "default": false
+        }
+      ]
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "FAQ Accordion",
+      "blocks": [
+        {
+          "type": "question",
+          "settings": {
+            "question": "How long does shipping take?",
+            "answer": "<p>Orders ship within 1–2 business days. Delivery usually takes 3–7 business days depending on your location.</p>",
+            "category": "Shipping"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Do you offer cash on delivery?",
+            "answer": "<p>Yes! Cash on delivery is available on most pin codes. You'll see the option at checkout.</p>",
+            "category": "Payments"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "What is your return policy?",
+            "answer": "<p>You can return any unused item within 30 days for a full refund. Just reach out and we'll send you a prepaid label.</p>",
+            "category": "Returns"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "How can I track my order?",
+            "answer": "<p>As soon as your order ships, we email and text you a tracking link so you can follow it every step of the way.</p>",
+            "category": "Shipping"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Are my payment details secure?",
+            "answer": "<p>Absolutely. All payments are processed through encrypted, PCI-compliant gateways. We never store your card details.</p>",
+            "category": "Payments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "FAQ — Split with Contact Card",
+      "settings": {
+        "layout": "split",
+        "item_style": "lines",
+        "heading_align": "left",
+        "icon_style": "plus_rotate",
+        "icon_background": "outline",
+        "icon_active_color": "#6D5DFC",
+        "active_indicator": "none",
+        "item_shadow": "none",
+        "hover_lift": false,
+        "show_numbers": true,
+        "show_tabs": true,
+        "eyebrow": "Help center",
+        "heading": "Frequently asked <em>questions</em>",
+        "cta_bg": "#111118",
+        "cta_heading_color": "#FFFFFF",
+        "cta_text_color": "#B5B5C5",
+        "cta_button_style": "gradient"
+      },
+      "blocks": [
+        {
+          "type": "question",
+          "settings": {
+            "question": "How long does shipping take?",
+            "answer": "<p>Orders ship within 1–2 business days. Delivery usually takes 3–7 business days depending on your location.</p>",
+            "category": "Shipping"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Do you offer cash on delivery?",
+            "answer": "<p>Yes! Cash on delivery is available on most pin codes. You'll see the option at checkout.</p>",
+            "category": "Payments"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "What is your return policy?",
+            "answer": "<p>You can return any unused item within 30 days for a full refund. Just reach out and we'll send you a prepaid label.</p>",
+            "category": "Returns"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "How can I track my order?",
+            "answer": "<p>As soon as your order ships, we email and text you a tracking link so you can follow it every step of the way.</p>",
+            "category": "Shipping"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Can I exchange for a different size?",
+            "answer": "<p>Of course. Request an exchange within 30 days and we'll ship the new size as soon as we receive the original.</p>",
+            "category": "Returns"
+          }
+        }
+      ]
+    },
+    {
+      "name": "FAQ — Dark Glass",
+      "settings": {
+        "item_style": "glass",
+        "background_color": "#0B0B14",
+        "background_gradient": "linear-gradient(160deg, rgba(11, 11, 20, 1) 0%, rgba(26, 18, 48, 1) 100%)",
+        "background_effect": "glow",
+        "effect_strength": 14,
+        "eyebrow_color": "#B7A9FF",
+        "heading_color": "#FFFFFF",
+        "subheading_color": "#A3A3BA",
+        "question_color": "#FFFFFF",
+        "question_hover_color": "#C9BEFF",
+        "question_active_color": "#FFFFFF",
+        "answer_color": "#B5B5C8",
+        "link_color": "#C9BEFF",
+        "item_bg": "#FFFFFF",
+        "item_opacity": 5,
+        "item_active_bg": "#1C1830",
+        "border_color": "#2A2640",
+        "border_active_color": "#4A3F8A",
+        "icon_color": "#C9BEFF",
+        "active_indicator": "glow",
+        "item_shadow": "none",
+        "show_search": true,
+        "control_bg": "#15131F",
+        "control_text": "#FFFFFF",
+        "control_border": "#2A2640",
+        "tab_active_bg": "#FFFFFF",
+        "tab_active_text": "#111118",
+        "cta_bg": "#15131F",
+        "cta_heading_color": "#FFFFFF",
+        "cta_text_color": "#A3A3BA",
+        "cta_border": true
+      },
+      "blocks": [
+        {
+          "type": "question",
+          "settings": {
+            "question": "How long does shipping take?",
+            "answer": "<p>Orders ship within 1–2 business days. Delivery usually takes 3–7 business days depending on your location.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Do you offer cash on delivery?",
+            "answer": "<p>Yes! Cash on delivery is available on most pin codes. You'll see the option at checkout.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "What is your return policy?",
+            "answer": "<p>You can return any unused item within 30 days for a full refund. Just reach out and we'll send you a prepaid label.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Are my payment details secure?",
+            "answer": "<p>Absolutely. All payments are processed through encrypted, PCI-compliant gateways. We never store your card details.</p>"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
