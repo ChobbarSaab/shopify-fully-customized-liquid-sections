@@ -13,7 +13,7 @@ Drop a section into any modern theme and control everything (layout, colors, fon
 | 📢 [Marquee Announcement](./announcement-bar) | Seamless scrolling announcement bar | 25+ | ✅ Ready |
 | ⭐ [Trust Badges](./trust-badges) | Shipping, returns, secure checkout and payment badges | 100+ | ✅ Ready |
 | ❓ [FAQ Accordion](./faq-accordion) | FAQs with topic tabs, search and Google FAQ schema | 125+ | ✅ Ready |
-| ⏱️ [Countdown Timer](./countdown-timer) | Fixed, evergreen and daily sale timers | 130+ | ✅ Ready |
+| ⏱️ [Countdown Timer](./CountdownTimer) | Fixed, evergreen and daily sale timers | 130+ | ✅ Ready |
 | 💬 [Testimonials](./testimonials) | Grid, carousel, masonry and scrolling "wall of love" | 135+ | ✅ Ready |
 | 🖼️ Before / After | Interactive image comparison slider | | 🚧 Coming Soon |
 | 🏷️ Logo Marquee | Infinite scrolling brand logo strip | | 🚧 Coming Soon |
